@@ -34,6 +34,7 @@ public class WalkController {
     private final DemoGraphFactory demoGraphFactory;
     private final GraphBuilder graphBuilder;
     private final LoopPlannerService loopPlannerService;
+    private final com.gentlewalk.validation.StationComparisonService stationComparisonService;
     private final AppProperties properties;
 
     public WalkController(AirQualityClient airQualityClient,
@@ -41,13 +42,24 @@ public class WalkController {
                           DemoGraphFactory demoGraphFactory,
                           GraphBuilder graphBuilder,
                           LoopPlannerService loopPlannerService,
+                          com.gentlewalk.validation.StationComparisonService stationComparisonService,
                           AppProperties properties) {
         this.airQualityClient = airQualityClient;
         this.windowService = windowService;
         this.demoGraphFactory = demoGraphFactory;
         this.graphBuilder = graphBuilder;
         this.loopPlannerService = loopPlannerService;
+        this.stationComparisonService = stationComparisonService;
         this.properties = properties;
+    }
+
+    @PostMapping("/validate/sensor")
+    @Operation(summary = "Validate handheld sensor readings against model loop rankings")
+    public ResponseEntity<com.gentlewalk.validation.StationComparisonService.HandheldValidationReport> validateSensor(
+            @RequestBody String csvContent,
+            @RequestParam(defaultValue = "15.0") double modelDoseLoopA,
+            @RequestParam(defaultValue = "28.0") double modelDoseLoopB) {
+        return ResponseEntity.ok(stationComparisonService.validateHandheldSensorCsv(csvContent, modelDoseLoopA, modelDoseLoopB));
     }
 
     @GetMapping("/health")

@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(WalkController.class)
-@Import({ApiExceptionHandler.class, WindowService.class, DoseService.class, LoopPlannerService.class, DemoGraphFactory.class})
+@Import({ApiExceptionHandler.class, WindowService.class, DoseService.class, LoopPlannerService.class, DemoGraphFactory.class, com.gentlewalk.validation.StationComparisonService.class})
 class WalkControllerTest {
 
     @Autowired
