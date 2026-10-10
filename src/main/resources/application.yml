@@ -1,0 +1,78 @@
+spring:
+  application:
+    name: gentle-walk
+
+server:
+  port: 8080
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+# Tunable assumptions and defaults (planning aid, not medical advice)
+# None of these values are clinically measured; they are heuristic guesses.
+gentlewalk:
+  # Walking speed in meters per minute (approx. 3.6 km/h typical for elderly walkers)
+  walk-speed-m-per-min: 60.0
+
+  # Minute volume breathing rate in m^3 / min (approx. 20 L/min for light walking)
+  breathing-m3-per-min: 0.02
+
+  # Sensitivity multipliers by profile
+  sensitivity:
+    normal: 1.0
+    sensitive: 1.5
+    very-sensitive: 2.0
+
+  # Road class exposure factor relative to footpaths
+  # Heuristic proxy for proximity to vehicle exhaust emissions
+  class-factor:
+    primary: 1.6
+    secondary: 1.4
+    residential: 1.15
+    footpath: 1.0
+    park-path: 0.7
+
+  # Hotspot penalty added to path factor within 30m of user-indicated pollution sources
+  hotspot-penalty: 0.3
+
+  # Slope threshold in percent for low-mobility mode (gentle walking constraint)
+  max-slope-low-mobility-percent: 5.0
+
+  # Cost multiplier when a path edge is equipped with a bench (favors rest stops)
+  bench-cost-multiplier: 0.9
+
+  # Traffic light thresholds based loosely on CPCB India PM2.5 guidelines (ug/m3)
+  traffic-light:
+    green-max: 60.0
+    yellow-max: 90.0
+
+  # Loop planner optimization parameters
+  loop:
+    length-tolerance: 0.25
+    max-candidates: 60
+    return-path-penalty: 4.0
+    random-seed: 42
+
+  # External API endpoints and polite configuration
+  overpass:
+    base-url: https://overpass-api.de/api/interpreter
+    user-agent: "GentleWalk/1.0 (hackathon-elder-planner; contact: dev@gentlewalk.local)"
+    timeout-ms: 25000
+    retry-count: 1
+    retry-backoff-ms: 1500
+
+  open-meteo:
+    air-quality-base-url: https://air-quality-api.open-meteo.com/v1/air-quality
+    elevation-base-url: https://api.open-meteo.com/v1/elevation
+    timeout-ms: 10000
+
+  cors:
+    allowed-origins:
+      - "http://localhost:5173"
+      - "http://localhost:3000"
+      - "http://127.0.0.1:5173"
+      - "http://127.0.0.1:3000"
+
+  disclaimer: "Gentle Walk is an algorithmic planning aid and not medical advice. Air quality data and exposure models are estimates. Please consult your physician and local health advisories."

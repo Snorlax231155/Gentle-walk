@@ -1,0 +1,71 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API",
+  "elements": [
+    {
+      "type": "node",
+      "id": 1001,
+      "lat": 28.6140,
+      "lon": 77.2091,
+      "tags": {
+        "amenity": "bench"
+      }
+    },
+    {
+      "type": "way",
+      "id": 2001,
+      "nodes": [101, 102, 103],
+      "geometry": [
+        {"lat": 28.6139, "lon": 77.2090},
+        {"lat": 28.6140, "lon": 77.2091},
+        {"lat": 28.6141, "lon": 77.2092}
+      ],
+      "tags": {
+        "highway": "footway",
+        "name": "Garden Path"
+      }
+    },
+    {
+      "type": "way",
+      "id": 2002,
+      "nodes": [103, 104],
+      "geometry": [
+        {"lat": 28.6141, "lon": 77.2092},
+        {"lat": 28.6145, "lon": 77.2092}
+      ],
+      "tags": {
+        "highway": "primary",
+        "name": "Main Avenue"
+      }
+    },
+    {
+      "type": "way",
+      "id": 2003,
+      "nodes": [104, 101],
+      "geometry": [
+        {"lat": 28.6145, "lon": 77.2092},
+        {"lat": 28.6139, "lon": 77.2090}
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Colony Road"
+      }
+    },
+    {
+      "type": "way",
+      "id": 3001,
+      "nodes": [501, 502, 503, 504, 501],
+      "geometry": [
+        {"lat": 28.6135, "lon": 77.2085},
+        {"lat": 28.6145, "lon": 77.2085},
+        {"lat": 28.6145, "lon": 77.2095},
+        {"lat": 28.6135, "lon": 77.2095},
+        {"lat": 28.6135, "lon": 77.2085}
+      ],
+      "tags": {
+        "leisure": "park",
+        "name": "Central Colony Park"
+      }
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: gentle-walk-test
+
+gentlewalk:
+  walk-speed-m-per-min: 60.0
+  breathing-m3-per-min: 0.02
+  sensitivity:
+    normal: 1.0
+    sensitive: 1.5
+    very-sensitive: 2.0
+  class-factor:
+    primary: 1.6
+    secondary: 1.4
+    residential: 1.15
+    footpath: 1.0
+    park-path: 0.7
+  hotspot-penalty: 0.3
+  max-slope-low-mobility-percent: 5.0
+  bench-cost-multiplier: 0.9
+  traffic-light:
+    green-max: 60.0
+    yellow-max: 90.0
+  loop:
+    length-tolerance: 0.25
+    max-candidates: 60
+    return-path-penalty: 4.0
+    random-seed: 42
+  overpass:
+    base-url: https://overpass-api.de/api/interpreter
+    user-agent: "GentleWalkTest/1.0"
+    timeout-ms: 5000
+    retry-count: 0
+    retry-backoff-ms: 100
+  open-meteo:
+    air-quality-base-url: https://air-quality-api.open-meteo.com/v1/air-quality
+    elevation-base-url: https://api.open-meteo.com/v1/elevation
+    timeout-ms: 5000
+  disclaimer: "Gentle Walk is an algorithmic planning aid and not medical advice."
