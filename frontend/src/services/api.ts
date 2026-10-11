@@ -43,3 +43,12 @@ export async function planWalk(params: PlanParams): Promise<PlanResponse> {
   }
   return response.json();
 }
+
+export async function searchPlacesApi(query: string): Promise<import('../types').PlaceSearchResult[]> {
+  const url = `/api/places/search?q=${encodeURIComponent(query.trim())}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Search failed (${response.status})`);
+  }
+  return response.json();
+}

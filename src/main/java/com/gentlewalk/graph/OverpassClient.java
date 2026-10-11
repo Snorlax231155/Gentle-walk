@@ -54,14 +54,22 @@ public class OverpassClient {
 
         String configuredUrl = properties.overpass() != null && properties.overpass().baseUrl() != null
                 ? properties.overpass().baseUrl()
-                : "https://overpass.openstreetmap.fr/api/interpreter";
+                : "https://overpass-api.de/api/interpreter";
 
         List<String> endpoints = new ArrayList<>();
-        endpoints.add(configuredUrl);
-        if (!configuredUrl.contains("overpass-api.de")) {
-            endpoints.add("https://overpass-api.de/api/interpreter");
-        } else {
-            endpoints.add("https://overpass.openstreetmap.fr/api/interpreter");
+        if (!configuredUrl.contains("openstreetmap.fr")) {
+            endpoints.add(configuredUrl);
+        }
+        List<String> knownMirrors = List.of(
+                "https://overpass-api.de/api/interpreter",
+                "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+                "https://overpass.kumi.systems/api/interpreter",
+                "https://lz4.overpass-api.de/api/interpreter"
+        );
+        for (String mirror : knownMirrors) {
+            if (!endpoints.contains(mirror)) {
+                endpoints.add(mirror);
+            }
         }
 
         String query = buildQuery(lat, lon, radiusM);

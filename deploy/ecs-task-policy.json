@@ -16,6 +16,14 @@
         "s3:GetObject"
       ],
       "Resource": "arn:aws:s3:::gentle-walk-overpass-cache-651694719691/*"
+    },
+    {
+      "Sid": "AllowS3BucketList",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket"
+      ],
+      "Resource": "arn:aws:s3:::gentle-walk-overpass-cache-651694719691"
     }
   ]
 }

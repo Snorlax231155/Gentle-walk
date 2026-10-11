@@ -35,8 +35,30 @@ public class WalkController {
     private final GraphBuilder graphBuilder;
     private final LoopPlannerService loopPlannerService;
     private final com.gentlewalk.validation.StationComparisonService stationComparisonService;
+    private final com.gentlewalk.service.PlaceSearchService placeSearchService;
     private final com.gentlewalk.service.IndoorFallbackService indoorFallbackService;
     private final AppProperties properties;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public WalkController(AirQualityClient airQualityClient,
+                          WindowService windowService,
+                          DemoGraphFactory demoGraphFactory,
+                          GraphBuilder graphBuilder,
+                          LoopPlannerService loopPlannerService,
+                          com.gentlewalk.validation.StationComparisonService stationComparisonService,
+                          com.gentlewalk.service.IndoorFallbackService indoorFallbackService,
+                          com.gentlewalk.service.PlaceSearchService placeSearchService,
+                          AppProperties properties) {
+        this.airQualityClient = airQualityClient;
+        this.windowService = windowService;
+        this.demoGraphFactory = demoGraphFactory;
+        this.graphBuilder = graphBuilder;
+        this.loopPlannerService = loopPlannerService;
+        this.stationComparisonService = stationComparisonService;
+        this.indoorFallbackService = indoorFallbackService;
+        this.placeSearchService = placeSearchService;
+        this.properties = properties;
+    }
 
     public WalkController(AirQualityClient airQualityClient,
                           WindowService windowService,
@@ -46,14 +68,19 @@ public class WalkController {
                           com.gentlewalk.validation.StationComparisonService stationComparisonService,
                           com.gentlewalk.service.IndoorFallbackService indoorFallbackService,
                           AppProperties properties) {
-        this.airQualityClient = airQualityClient;
-        this.windowService = windowService;
-        this.demoGraphFactory = demoGraphFactory;
-        this.graphBuilder = graphBuilder;
-        this.loopPlannerService = loopPlannerService;
-        this.stationComparisonService = stationComparisonService;
-        this.indoorFallbackService = indoorFallbackService;
-        this.properties = properties;
+        this(airQualityClient, windowService, demoGraphFactory, graphBuilder, loopPlannerService,
+             stationComparisonService, indoorFallbackService,
+             new com.gentlewalk.service.PlaceSearchService(org.springframework.web.client.RestClient.builder(), new com.fasterxml.jackson.databind.ObjectMapper()),
+             properties);
+    }
+
+    @GetMapping("/places/search")
+    @Operation(summary = "Search places, parks, and cities with instant curated suggestions and live geocoding")
+    public ResponseEntity<List<com.gentlewalk.api.dto.PlaceSearchResult>> searchPlaces(
+            @RequestParam(defaultValue = "") String q) {
+        return ResponseEntity.ok(placeSearchService != null
+                ? placeSearchService.searchPlaces(q)
+                : List.of());
     }
 
     @GetMapping("/indoor-fallback")

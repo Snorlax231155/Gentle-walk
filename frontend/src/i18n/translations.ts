@@ -49,6 +49,19 @@ export const translations = {
     markHotspot: "Report Hotspot",
     clickMapHint: "Click anywhere on the map to set your walking start point",
     customDestination: "Visited Place",
+    heroTitle: "Breathe Easy. Walk Gently.",
+    heroSubtitle: "Discover the cleanest, shaded, and bench-filled walking loops near you — avoiding pollution hotspots and steep slopes.",
+    useMyLocation: "Use My Current Location",
+    locating: "Finding your location...",
+    popularDestinations: "Popular Clean-Air Walking Parks",
+    backToHome: "Change Destination / Back to Home",
+    curatedTag: "Curated Park",
+    feature1Title: "Minimal Inhaled Particulates",
+    feature1Desc: "Calculates route exposure vs. typical vehicular roads (saves 20-40% inhaled PM2.5).",
+    feature2Title: "Frequent Rest Benches",
+    feature2Desc: "Prioritizes footpaths with documented park benches for elder rest intervals.",
+    feature3Title: "Gentle Slope Avoidance",
+    feature3Desc: "Excludes steep paths with >5% incline for joint and cardiovascular safety."
   },
   hi: {
     appTitle: "जेंटल वॉक (Gentle Walk)",
@@ -98,5 +111,18 @@ export const translations = {
     markHotspot: "धुआं स्थल चिन्हित करें",
     clickMapHint: "शुरुआती बिंदु सेट करने के लिए नक्शे पर कहीं भी क्लिक करें",
     customDestination: "भ्रमण स्थल",
+    heroTitle: "सुकून से सांस लें, सहजता से टहलें",
+    heroSubtitle: "अपने आस-पास सबसे स्वच्छ हवा, छायादार और बेंचों से युक्त टहलने के मार्ग खोजें — प्रदूषण और तीव्र ढलान से दूर।",
+    useMyLocation: "मेरे वर्तमान स्थान का उपयोग करें",
+    locating: "आपका स्थान खोज रहे हैं...",
+    popularDestinations: "लोकप्रिय स्वच्छ-वायु पार्क और स्थल",
+    backToHome: "गंतव्य बदलें / होम पेज पर जाएं",
+    curatedTag: "विशेष पार्क",
+    feature1Title: "न्यूनतम दूषित वायु सेवन",
+    feature1Desc: "सड़क के प्रदूषण से 20-40% कम PM2.5 साँस में जाने वाला मार्ग चुनता है।",
+    feature2Title: "नियमित विश्राम बेंच",
+    feature2Desc: "बुजुर्गों के विश्राम के लिए पार्क बेंचों वाले रास्तों को प्राथमिकता देता है।",
+    feature3Title: "समतल, सुरक्षित मार्ग",
+    feature3Desc: "घुटनों व दिल पर दबाव न पड़े, इसलिए 5% से अधिक ढलानों को हटाता है।"
   }
 };

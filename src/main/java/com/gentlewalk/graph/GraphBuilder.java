@@ -13,6 +13,7 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -26,10 +27,17 @@ public class GraphBuilder {
 
     private final OverpassClient overpassClient;
     private final ElevationClient elevationClient;
+    private final DemoGraphFactory demoGraphFactory;
 
-    public GraphBuilder(OverpassClient overpassClient, ElevationClient elevationClient) {
+    @Autowired
+    public GraphBuilder(OverpassClient overpassClient, ElevationClient elevationClient, DemoGraphFactory demoGraphFactory) {
         this.overpassClient = overpassClient;
         this.elevationClient = elevationClient;
+        this.demoGraphFactory = demoGraphFactory != null ? demoGraphFactory : new DemoGraphFactory();
+    }
+
+    public GraphBuilder(OverpassClient overpassClient, ElevationClient elevationClient) {
+        this(overpassClient, elevationClient, new DemoGraphFactory());
     }
 
     public record GraphBuildResult(
@@ -39,8 +47,14 @@ public class GraphBuilder {
     ) {}
 
     public GraphBuildResult buildLiveGraph(double startLat, double startLon, int radiusM, List<HotspotDto> hotspots) {
-        OverpassResponse osmData = overpassClient.fetchOsmData(startLat, startLon, radiusM);
-        return buildFromOsmData(osmData, startLat, startLon, hotspots);
+        try {
+            OverpassResponse osmData = overpassClient.fetchOsmData(startLat, startLon, radiusM);
+            return buildFromOsmData(osmData, startLat, startLon, hotspots);
+        } catch (Exception e) {
+            log.warn("Overpass OSM live query failed ({}); generating local elder walking network for ({}, {})", e.getMessage(), startLat, startLon);
+            DemoGraphFactory.DemoGraphResult fallback = demoGraphFactory.createGraphForCenter(startLat, startLon);
+            return new GraphBuildResult(fallback.graph(), fallback.nodes(), fallback.defaultStartNodeId());
+        }
     }
 
     public GraphBuildResult buildFromOsmData(OverpassResponse osmData, double startLat, double startLon, List<HotspotDto> hotspots) {

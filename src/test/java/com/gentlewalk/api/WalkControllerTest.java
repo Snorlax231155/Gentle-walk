@@ -51,6 +51,9 @@ class WalkControllerTest {
     @MockBean
     private AppProperties appProperties;
 
+    @MockBean
+    private com.gentlewalk.service.PlaceSearchService placeSearchService;
+
     @Test
     @DisplayName("GET /api/health returns 200 OK")
     void testHealthEndpoint() throws Exception {
@@ -146,5 +149,19 @@ class WalkControllerTest {
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.title").value("Upstream Service Error"))
                 .andExpect(jsonPath("$.detail", containsString("Open-Meteo")));
+    }
+
+    @Test
+    @DisplayName("GET /api/places/search returns 200 OK and place list")
+    void testSearchPlacesEndpoint() throws Exception {
+        when(placeSearchService.searchPlaces(any()))
+                .thenReturn(List.of(new com.gentlewalk.api.dto.PlaceSearchResult(
+                        "Lodhi Gardens", "Lodhi Gardens, New Delhi", 28.5933, 77.2215, true
+                )));
+
+        mockMvc.perform(get("/api/places/search?q=lodhi"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Lodhi Gardens"))
+                .andExpect(jsonPath("$[0].isCurated").value(true));
     }
 }

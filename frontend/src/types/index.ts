@@ -57,3 +57,11 @@ export interface WindowResponse {
   window: WindowResult;
   disclaimer: string;
 }
+
+export interface PlaceSearchResult {
+  name: string;
+  displayName: string;
+  lat: number;
+  lon: number;
+  isCurated: boolean;
+}

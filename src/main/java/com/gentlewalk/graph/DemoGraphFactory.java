@@ -27,16 +27,24 @@ public class DemoGraphFactory {
     ) {}
 
     public DemoGraphResult createDemoGraph() {
+        return createGraphForCenter(BASE_LAT, BASE_LON);
+    }
+
+    public DemoGraphResult createGraphForCenter(double centerLat, double centerLon) {
         SimpleWeightedGraph<Long, PathEdge> graph = new SimpleWeightedGraph<>(PathEdge.class);
         Map<Long, NodeCoordinate> nodes = new HashMap<>();
         AtomicLong edgeIdGen = new AtomicLong(1);
 
-        // 1. Create 14x14 nodes
+        double latStep = 60.0 / 111000.0;
+        double cosLat = Math.cos(Math.toRadians(centerLat));
+        double lonStep = 60.0 / (111000.0 * (Math.abs(cosLat) > 0.001 ? Math.abs(cosLat) : 1.0));
+
+        // 1. Create 14x14 nodes centered around (centerLat, centerLon)
         for (int r = 0; r < GRID_SIZE; r++) {
             for (int c = 0; c < GRID_SIZE; c++) {
                 long nodeId = (long) r * 100 + c;
-                double lat = BASE_LAT + (r - GRID_SIZE / 2.0) * LAT_STEP;
-                double lon = BASE_LON + (c - GRID_SIZE / 2.0) * LON_STEP;
+                double lat = centerLat + (r - GRID_SIZE / 2.0) * latStep;
+                double lon = centerLon + (c - GRID_SIZE / 2.0) * lonStep;
                 double elevation = (r >= 10 && c >= 10) ? 220.0 + (r + c) * 3.0 : 210.0;
                 NodeCoordinate coord = new NodeCoordinate(nodeId, lat, lon, elevation);
                 nodes.put(nodeId, coord);
