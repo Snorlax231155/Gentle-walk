@@ -1,5 +1,5 @@
 // Gentle Walk Service Worker
-const CACHE_NAME = 'gentle-walk-v1';
+const CACHE_NAME = 'gentle-walk-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -7,11 +7,6 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
   self.skipWaiting();
 });
 
