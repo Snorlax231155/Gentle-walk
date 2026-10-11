@@ -48,7 +48,8 @@ class LoopPlannerServiceTest {
         );
 
         DoseService doseService = new DoseService(properties);
-        loopPlannerService = new LoopPlannerService(properties, doseService);
+        IndoorFallbackService indoorFallbackService = new IndoorFallbackService();
+        loopPlannerService = new LoopPlannerService(properties, doseService, indoorFallbackService);
         demoGraphFactory = new DemoGraphFactory();
 
         dummyWindow = new WindowResult(15, 16, 42.0, 135.0, TrafficLight.GREEN, List.of());

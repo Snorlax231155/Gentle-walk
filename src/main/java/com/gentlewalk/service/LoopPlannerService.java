@@ -24,10 +24,12 @@ public class LoopPlannerService {
 
     private final AppProperties properties;
     private final DoseService doseService;
+    private final IndoorFallbackService indoorFallbackService;
 
-    public LoopPlannerService(AppProperties properties, DoseService doseService) {
+    public LoopPlannerService(AppProperties properties, DoseService doseService, IndoorFallbackService indoorFallbackService) {
         this.properties = properties;
         this.doseService = doseService;
+        this.indoorFallbackService = indoorFallbackService;
     }
 
     public record PlannedLoop(
@@ -127,6 +129,13 @@ public class LoopPlannerService {
                 ? properties.disclaimer()
                 : "Gentle Walk is an algorithmic planning aid and not medical advice.";
 
+        NodeCoordinate startCoord = nodeMap.get(startNodeId);
+        double sLat = startCoord != null ? startCoord.lat() : 28.6139;
+        double sLon = startCoord != null ? startCoord.lon() : 77.2090;
+        List<IndoorVenue> indoorFallbacks = indoorFallbackService != null
+                ? indoorFallbackService.getIndoorFallbacks(sLat, sLon, 4)
+                : List.of();
+
         return new PlanResponse(
                 mode,
                 windowInfo,
@@ -134,7 +143,8 @@ public class LoopPlannerService {
                 baselineLoop.loopResult(),
                 Math.round(reductionPct * 10.0) / 10.0,
                 extraMinutes,
-                disclaimer
+                disclaimer,
+                indoorFallbacks
         );
     }
 

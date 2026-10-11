@@ -5,8 +5,10 @@ import { fetchWindow, planWalk } from './services/api';
 import { ControlsSidebar } from './components/ControlsSidebar';
 import { AirQualityChart } from './components/AirQualityChart';
 import { LoopMap } from './components/LoopMap';
+import { GoogleRouteMap } from './components/GoogleRouteMap';
+import { IndoorFallbackCard } from './components/IndoorFallbackCard';
 import { MetricCards } from './components/MetricCards';
-import { Shield, AlertCircle, Sparkles, Sun, Info } from 'lucide-react';
+import { Shield, AlertCircle, Sparkles, Sun, Info, Navigation, ExternalLink } from 'lucide-react';
 
 export function App() {
   const [language, setLanguage] = useState<Language>('en');
@@ -22,6 +24,10 @@ export function App() {
   const [lowMobility, setLowMobility] = useState<boolean>(false);
   const [hour, setHour] = useState<number>(15);
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
+
+  // Map Provider & Google Maps API key
+  const [mapProvider, setMapProvider] = useState<'osm' | 'google'>('osm');
+  const [googleApiKey, setGoogleApiKey] = useState<string>('');
 
   // State
   const [loading, setLoading] = useState<boolean>(false);
@@ -190,6 +196,10 @@ export function App() {
             onPlan={handlePlanWalk}
             loading={loading}
             labels={t as unknown as Record<string, string>}
+            mapProvider={mapProvider}
+            onMapProviderChange={setMapProvider}
+            googleApiKey={googleApiKey}
+            onGoogleApiKeyChange={setGoogleApiKey}
           />
         </div>
 
@@ -235,6 +245,15 @@ export function App() {
             </div>
           )}
 
+          {/* Indoor Fallback Alert Card (Shown when status is RED or as indoor alternative) */}
+          {planData?.indoorFallbacks && planData.indoorFallbacks.length > 0 && (
+            <IndoorFallbackCard
+              venues={planData.indoorFallbacks}
+              isRedStatus={windowData?.window.trafficLight === 'RED'}
+              language={language}
+            />
+          )}
+
           {/* Three Key Elder Metrics */}
           {planData && (
             <MetricCards
@@ -254,25 +273,54 @@ export function App() {
 
           {/* Interactive Map */}
           <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-3 px-1">
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-emerald-600" />
-                {t.cleanLoop} vs {t.typicalLoop}
-              </h3>
-              <span className="text-xs text-slate-500 hidden sm:inline">
-                {t.addHotspotHint}
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3 px-1">
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-emerald-600" />
+                  {t.cleanLoop} vs {t.typicalLoop}
+                </h3>
+                <span className="text-xs px-2 py-0.5 rounded font-bold uppercase bg-slate-100 text-slate-600">
+                  {mapProvider === 'google' ? 'Google Maps' : 'OpenStreetMap'}
+                </span>
+              </div>
+
+              {/* Mobile Turn-by-Turn Walking Button */}
+              {planData && planData.bestLoop && planData.bestLoop.coordinates.length > 1 && (
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&origin=${planData.bestLoop.coordinates[0][1]},${planData.bestLoop.coordinates[0][0]}&destination=${planData.bestLoop.coordinates[planData.bestLoop.coordinates.length - 1][1]},${planData.bestLoop.coordinates[planData.bestLoop.coordinates.length - 1][0]}&waypoints=${planData.bestLoop.coordinates[Math.floor(planData.bestLoop.coordinates.length / 2)][1]},${planData.bestLoop.coordinates[Math.floor(planData.bestLoop.coordinates.length / 2)][0]}&travelmode=walking`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                >
+                  <Navigation className="w-3.5 h-3.5" />
+                  <span>Start Walking in Google Maps</span>
+                  <ExternalLink className="w-3 h-3 opacity-70" />
+                </a>
+              )}
             </div>
 
-            <LoopMap
-              center={[lat, lon]}
-              cleanLoop={planData?.bestLoop}
-              typicalLoop={planData?.baselineLoop}
-              hotspots={hotspots}
-              onAddHotspot={handleAddHotspot}
-              cleanLoopLabel={t.cleanLoop}
-              typicalLoopLabel={t.typicalLoop}
-            />
+            {mapProvider === 'google' ? (
+              <GoogleRouteMap
+                apiKey={googleApiKey}
+                center={[lat, lon]}
+                cleanLoop={planData?.bestLoop}
+                typicalLoop={planData?.baselineLoop}
+                hotspots={hotspots}
+                onAddHotspot={handleAddHotspot}
+                cleanLoopLabel={t.cleanLoop}
+                typicalLoopLabel={t.typicalLoop}
+              />
+            ) : (
+              <LoopMap
+                center={[lat, lon]}
+                cleanLoop={planData?.bestLoop}
+                typicalLoop={planData?.baselineLoop}
+                hotspots={hotspots}
+                onAddHotspot={handleAddHotspot}
+                cleanLoopLabel={t.cleanLoop}
+                typicalLoopLabel={t.typicalLoop}
+              />
+            )}
           </div>
 
           {/* 24-Hour PM2.5 Forecast Chart */}

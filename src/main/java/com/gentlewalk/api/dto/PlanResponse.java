@@ -1,7 +1,10 @@
 package com.gentlewalk.api.dto;
 
+import com.gentlewalk.domain.IndoorVenue;
 import com.gentlewalk.domain.LoopResult;
 import com.gentlewalk.domain.WindowResult;
+
+import java.util.List;
 
 public record PlanResponse(
         String mode,
@@ -10,5 +13,6 @@ public record PlanResponse(
         LoopResult baselineLoop,
         Double reductionPct,
         Double extraMinutes,
-        String disclaimer
+        String disclaimer,
+        List<IndoorVenue> indoorFallbacks
 ) {}

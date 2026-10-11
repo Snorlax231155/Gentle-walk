@@ -26,6 +26,21 @@ export interface LoopResult {
   roadClassBreakdownMeters: Record<string, number>;
 }
 
+export interface IndoorVenue {
+  name: string;
+  category: string;
+  lat: number;
+  lon: number;
+  distanceKm: number;
+  estimatedLoopMeters: number;
+  filtrationStatus: string;
+  hasRestBenches: boolean;
+  elevatorAccessible: boolean;
+  openingHours: string;
+  seniorTip: string;
+  amenities: string[];
+}
+
 export interface PlanResponse {
   mode: 'demo' | 'live';
   window: WindowResult;
@@ -34,6 +49,7 @@ export interface PlanResponse {
   reductionPct: number;
   extraMinutes: number;
   disclaimer: string;
+  indoorFallbacks?: IndoorVenue[];
 }
 
 export interface WindowResponse {

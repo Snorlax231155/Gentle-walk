@@ -35,6 +35,7 @@ public class WalkController {
     private final GraphBuilder graphBuilder;
     private final LoopPlannerService loopPlannerService;
     private final com.gentlewalk.validation.StationComparisonService stationComparisonService;
+    private final com.gentlewalk.service.IndoorFallbackService indoorFallbackService;
     private final AppProperties properties;
 
     public WalkController(AirQualityClient airQualityClient,
@@ -43,6 +44,7 @@ public class WalkController {
                           GraphBuilder graphBuilder,
                           LoopPlannerService loopPlannerService,
                           com.gentlewalk.validation.StationComparisonService stationComparisonService,
+                          com.gentlewalk.service.IndoorFallbackService indoorFallbackService,
                           AppProperties properties) {
         this.airQualityClient = airQualityClient;
         this.windowService = windowService;
@@ -50,7 +52,17 @@ public class WalkController {
         this.graphBuilder = graphBuilder;
         this.loopPlannerService = loopPlannerService;
         this.stationComparisonService = stationComparisonService;
+        this.indoorFallbackService = indoorFallbackService;
         this.properties = properties;
+    }
+
+    @GetMapping("/indoor-fallback")
+    @Operation(summary = "Find climate-controlled indoor walking alternatives with HEPA air filtration when outdoor air is poor")
+    public ResponseEntity<List<com.gentlewalk.domain.IndoorVenue>> getIndoorFallbacks(
+            @RequestParam(defaultValue = "28.6139") double lat,
+            @RequestParam(defaultValue = "77.2090") double lon,
+            @RequestParam(defaultValue = "4") int limit) {
+        return ResponseEntity.ok(indoorFallbackService.getIndoorFallbacks(lat, lon, limit));
     }
 
     @PostMapping("/validate/sensor")

@@ -1,0 +1,14 @@
+version: 1.0
+runtime: custom
+build:
+  commands:
+    build:
+      - echo "Building Gentle Walk Docker container..."
+      - docker build -t gentle-walk .
+run:
+  command: sh -c "exec java $JAVA_OPTS -jar app.jar"
+  network:
+    port: 8080
+    env:
+      SERVER_PORT: "8080"
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
