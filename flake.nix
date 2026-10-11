@@ -22,7 +22,10 @@
 
           shellHook = ''
             export JAVA_HOME=${pkgs.jdk21}
-            echo "Gentle Walk dev environment loaded: Java 21, Maven, Node.js"
+            export AWS_PROFILE=AdministratorAccess-651694719691
+            export AWS_DEFAULT_REGION=ap-south-1
+            export AWS_REGION=ap-south-1
+            echo "Gentle Walk dev environment loaded: Java 21, Maven, Node.js, AWS CLI (ap-south-1)"
           '';
         };
       });
