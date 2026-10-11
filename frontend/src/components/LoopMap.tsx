@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
-import { LoopResult, Hotspot } from '../types';
+import { LoopResult, Hotspot, CommunityStop } from '../types';
 
 // Custom icons using Leaflet DivIcon
 const startIcon = L.divIcon({
@@ -17,6 +17,23 @@ const hotspotIcon = L.divIcon({
   iconSize: [24, 24],
   iconAnchor: [12, 12],
 });
+
+const createStopIcon = (type: string) => {
+  const emoji =
+    type === 'BENCH' ? '🪑' :
+    type === 'SHADE' ? '🌳' :
+    type === 'WATER' ? '🚰' :
+    type === 'GARDEN' ? '🌸' :
+    type === 'SANCTUARY' ? '🛡️' :
+    type === 'VIEWPOINT' ? '🌅' : '📍';
+
+  return L.divIcon({
+    html: `<div style="background: linear-gradient(135deg, #059669, #047857); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.35); transform: translateY(-2px);">${emoji}</div>`,
+    className: 'custom-pokestop-icon',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
+};
 
 export type MapLayer = 'osm' | 'google-street' | 'google-satellite';
 export type MapClickAction = 'set-start' | 'add-hotspot';
@@ -38,6 +55,7 @@ interface LoopMapProps {
     setStartPoint?: string;
     markHotspot?: string;
   };
+  communityStops?: CommunityStop[];
 }
 
 function MapViewController({ center, cleanCoords }: { center: [number, number]; cleanCoords?: [number, number][] }) {
@@ -93,6 +111,7 @@ export const LoopMap: React.FC<LoopMapProps> = ({
   clickAction = 'set-start',
   onClickActionChange,
   labels,
+  communityStops,
 }) => {
   const [internalLayer, setInternalLayer] = React.useState<MapLayer>(layer);
   const activeLayer = layer !== undefined && onLayerChange ? layer : internalLayer;
@@ -278,6 +297,31 @@ export const LoopMap: React.FC<LoopMapProps> = ({
             </Popup>
           </Marker>
         ))}
+
+        {/* Community PokéStop Rest Milestones */}
+        {communityStops && communityStops.map((stop) => (
+          <Marker key={stop.id} position={[stop.lat, stop.lon]} icon={createStopIcon(stop.type)}>
+            <Popup>
+              <div className="text-xs p-1 max-w-[210px]">
+                <div className="font-bold text-emerald-900 flex items-center gap-1.5 text-sm">
+                  <span>
+                    {stop.type === 'BENCH' ? '🪑' :
+                     stop.type === 'SHADE' ? '🌳' :
+                     stop.type === 'WATER' ? '🚰' :
+                     stop.type === 'GARDEN' ? '🌸' :
+                     stop.type === 'SANCTUARY' ? '🛡️' :
+                     stop.type === 'VIEWPOINT' ? '🌅' : '📍'}
+                  </span>
+                  <span>{stop.name}</span>
+                </div>
+                <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mt-0.5">
+                  Elder Rest Milestone
+                </div>
+                <p className="text-slate-600 text-[11px] mt-1 leading-snug">{stop.description}</p>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
       </MapContainer>
 
       {/* Map Legend Overlay */}
@@ -294,6 +338,12 @@ export const LoopMap: React.FC<LoopMapProps> = ({
           <span className="w-3.5 h-3.5 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[9px]">S</span>
           <span className="text-slate-600">Start Point</span>
         </div>
+        {communityStops && communityStops.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-[13px]">🪑</span>
+            <span className="text-emerald-800 font-semibold">PokéStop Rest ({communityStops.length})</span>
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <span className="text-[12px]">⚠️</span>
           <span className="text-slate-600">Marked Hotspot</span>

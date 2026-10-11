@@ -52,3 +52,61 @@ export async function searchPlacesApi(query: string): Promise<import('../types')
   }
   return response.json();
 }
+
+export async function fetchCommunityRoutes(
+  lat?: number,
+  lon?: number,
+  radiusKm?: number
+): Promise<import('../types').CommunityRoute[]> {
+  const params = new URLSearchParams();
+  if (lat !== undefined) params.append('lat', lat.toString());
+  if (lon !== undefined) params.append('lon', lon.toString());
+  if (radiusKm !== undefined) params.append('radiusKm', radiusKm.toString());
+
+  const url = `/api/community/routes${params.toString() ? '?' + params.toString() : ''}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch community routes (${response.status})`);
+  }
+  return response.json();
+}
+
+export async function submitCommunityRoute(
+  data: import('../types').CreateCommunityRouteRequest
+): Promise<import('../types').CommunityRoute> {
+  const response = await fetch('/api/community/routes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    throw new Error(errorBody?.detail || `Failed to submit community route (${response.status})`);
+  }
+  return response.json();
+}
+
+export async function cheerCommunityRoute(
+  routeId: string
+): Promise<import('../types').CommunityRoute> {
+  const response = await fetch(`/api/community/routes/${encodeURIComponent(routeId)}/cheer`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to cheer route (${response.status})`);
+  }
+  return response.json();
+}
+
+export async function walkCommunityRoute(
+  routeId: string
+): Promise<import('../types').CommunityRoute> {
+  const response = await fetch(`/api/community/routes/${encodeURIComponent(routeId)}/walk`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to record walk (${response.status})`);
+  }
+  return response.json();
+}
+

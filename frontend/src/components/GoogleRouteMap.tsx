@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { APIProvider, Map, AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
-import { LoopResult, Hotspot } from '../types';
+import { LoopResult, Hotspot, CommunityStop } from '../types';
 
 interface GoogleRouteMapProps {
   apiKey: string;
@@ -13,6 +13,7 @@ interface GoogleRouteMapProps {
   cleanLoopLabel: string;
   typicalLoopLabel: string;
   clickAction?: 'set-start' | 'add-hotspot';
+  communityStops?: CommunityStop[];
 }
 
 // Polyline component using Google Maps JS API within @vis.gl/react-google-maps
@@ -105,6 +106,7 @@ export const GoogleRouteMap: React.FC<GoogleRouteMapProps> = ({
   cleanLoopLabel,
   typicalLoopLabel,
   clickAction = 'set-start',
+  communityStops,
 }) => {
   // Convert GeoJSON [lon, lat] pairs to Google Maps LatLngLiteral { lat, lng }
   const cleanPath: google.maps.LatLngLiteral[] = cleanLoop
@@ -200,6 +202,28 @@ export const GoogleRouteMap: React.FC<GoogleRouteMapProps> = ({
               </div>
             </AdvancedMarker>
           ))}
+          {/* Community PokéStop Rest Milestones */}
+          {communityStops && communityStops.map((stop) => {
+            const emoji =
+              stop.type === 'BENCH' ? '🪑' :
+              stop.type === 'SHADE' ? '🌳' :
+              stop.type === 'WATER' ? '🚰' :
+              stop.type === 'GARDEN' ? '🌸' :
+              stop.type === 'SANCTUARY' ? '🛡️' :
+              stop.type === 'VIEWPOINT' ? '🌅' : '📍';
+
+            return (
+              <AdvancedMarker
+                key={`g-stop-${stop.id}`}
+                position={{ lat: stop.lat, lng: stop.lon }}
+                title={`${stop.name} (${stop.type}): ${stop.description}`}
+              >
+                <div className="bg-emerald-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white shadow-md">
+                  {emoji}
+                </div>
+              </AdvancedMarker>
+            );
+          })}
         </Map>
       </APIProvider>
 
@@ -217,6 +241,12 @@ export const GoogleRouteMap: React.FC<GoogleRouteMapProps> = ({
           <span className="w-3.5 h-3.5 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[9px]">S</span>
           <span className="text-slate-600">Start Point</span>
         </div>
+        {communityStops && communityStops.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-[13px]">🪑</span>
+            <span className="text-emerald-800 font-semibold">PokéStop Rest ({communityStops.length})</span>
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <span className="text-[12px]">⚠️</span>
           <span className="text-slate-600">Marked Hotspot</span>

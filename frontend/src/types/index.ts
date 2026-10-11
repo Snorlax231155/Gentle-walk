@@ -65,3 +65,50 @@ export interface PlaceSearchResult {
   lon: number;
   isCurated: boolean;
 }
+
+export type StopType = 'BENCH' | 'SHADE' | 'WATER' | 'GARDEN' | 'SANCTUARY' | 'VIEWPOINT' | 'CAFE' | 'RESTROOM';
+
+export interface CommunityStop {
+  id: string;
+  name: string;
+  type: StopType | string;
+  description: string;
+  lat: number;
+  lon: number;
+}
+
+export interface CommunityRoute {
+  id: string;
+  title: string;
+  author: string;
+  description: string;
+  tags: string[];
+  startLat: number;
+  startLon: number;
+  lengthMeters: number;
+  durationMinutes: number;
+  benchCount: number;
+  estimatedPm25: number;
+  trafficLight: TrafficLight | string;
+  coordinates: [number, number][]; // [lon, lat] pairs
+  stops: CommunityStop[];
+  walkersCount: number;
+  cheersCount: number;
+  createdAt: string;
+}
+
+export interface CreateCommunityRouteRequest {
+  title: string;
+  author: string;
+  description: string;
+  tags: string[];
+  startLat: number;
+  startLon: number;
+  lengthMeters: number;
+  durationMinutes: number;
+  benchCount: number;
+  estimatedPm25?: number;
+  trafficLight?: string;
+  coordinates: [number, number][];
+  stops?: CommunityStop[];
+}
