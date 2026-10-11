@@ -1,0 +1,112 @@
+name: Gentle Walk CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  id-token: write   # Required for AWS OIDC authentication
+  contents: read    # Required for actions/checkout
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY: gentle-walk
+  ECS_CLUSTER: gentle-walk-cluster
+  ECS_SERVICE: gentle-walk-app
+
+jobs:
+  test:
+    name: Build & Verify (Offline Tests)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build Frontend PWA
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Copy Frontend Build to Spring Boot Static Assets
+        run: |
+          mkdir -p src/main/resources/static
+          cp -r frontend/dist/* src/main/resources/static/
+
+      - name: Run Unit & Integration Tests (100% Offline)
+        run: mvn test --batch-mode
+
+  deploy:
+    name: Containerize & Deploy to AWS ECS Express
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 & Maven
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Set up Node.js 20 & Build UI
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: |
+          cd frontend
+          npm ci
+          npm run build
+          cd ..
+          mkdir -p src/main/resources/static
+          cp -r frontend/dist/* src/main/resources/static/
+
+      - name: Configure AWS Credentials (OIDC or Secret Keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-south-1
+          # Assumes GitHub OIDC role configured in AWS IAM or fallback to secrets
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHubActions-GentleWalkCI
+        continue-on-error: true
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        continue-on-error: true
+
+      - name: Build & Push Image via Jib
+        if: steps.login-ecr.outcome == 'success'
+        run: |
+          mvn compile com.google.cloud.tools:jib-maven-plugin:3.4.1:build \
+            -Djib.from.image=eclipse-temurin:21-jre-alpine \
+            -Dimage=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} \
+            -Djib.to.tags=latest
+
+      - name: Update ECS Express Mode Service
+        if: steps.login-ecr.outcome == 'success'
+        run: |
+          aws ecs update-express-gateway-service \
+            --service-arn arn:aws:ecs:ap-south-1:${{ steps.login-ecr.outputs.account-id }}:service/${{ env.ECS_CLUSTER }}/${{ env.ECS_SERVICE }} \
+            --primary-container "{\"image\":\"${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}\",\"containerPort\":8080,\"awsLogsConfiguration\":{\"logGroup\":\"/ecs/gentle-walk\",\"logStreamPrefix\":\"ecs\"}}"

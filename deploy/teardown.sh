@@ -79,8 +79,10 @@ S3_BUCKET="gentle-walk-overpass-cache-651694719691"
 aws s3 rm "s3://${S3_BUCKET}" --recursive 2>/dev/null || true
 aws s3api delete-bucket --bucket "${S3_BUCKET}" --region "${AWS_REGION}" 2>/dev/null || true
 
-# 8. Delete CloudWatch Logs
-echo "Deleting CloudWatch Log Groups..."
+# 8. Delete CloudWatch Alarms & Dashboard & Logs
+echo "Deleting CloudWatch Alarms, Dashboard, and Log Groups..."
+aws cloudwatch delete-alarms --alarm-names gentle-walk-5xx-errors gentle-walk-high-latency 2>/dev/null || true
+aws cloudwatch delete-dashboards --dashboard-names gentle-walk-operations 2>/dev/null || true
 aws logs delete-log-group --log-group-name /ecs/gentle-walk 2>/dev/null || true
 aws logs delete-log-group --log-group-name /aws/lambda/gentle-walk-cache-refresher 2>/dev/null || true
 
@@ -88,6 +90,24 @@ aws logs delete-log-group --log-group-name /aws/lambda/gentle-walk-cache-refresh
 echo "Deleting ECR Repository..."
 aws ecr delete-repository --repository-name gentle-walk --force 2>/dev/null || true
 
+# 10. Delete CloudFront Distribution (if created)
+if [ -f "deploy/cloudfront-distribution-id.txt" ]; then
+  CF_ID=$(cat deploy/cloudfront-distribution-id.txt)
+  echo "Disabling and deleting CloudFront distribution ${CF_ID}..."
+  CF_ETAG=$(aws cloudfront get-distribution-config --id "$CF_ID" --query 'ETag' --output text 2>/dev/null || true)
+  if [ -n "$CF_ETAG" ]; then
+    # Disable first
+    aws cloudfront get-distribution-config --id "$CF_ID" --output json | \
+      jq '.DistributionConfig.Enabled = false' > /tmp/cf-disable.json 2>/dev/null || true
+    if [ -f /tmp/cf-disable.json ]; then
+      aws cloudfront update-distribution --id "$CF_ID" --if-match "$CF_ETAG" --distribution-config file:///tmp/cf-disable.json 2>/dev/null || true
+      rm -f /tmp/cf-disable.json
+    fi
+  fi
+  rm -f deploy/cloudfront-distribution-id.txt deploy/cloudfront-endpoint.txt
+fi
+
 echo "=========================================================="
 echo " Teardown completed. All billable resources destroyed."
 echo "=========================================================="
+

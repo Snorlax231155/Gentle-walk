@@ -1,6 +1,6 @@
 # Gentle Walk — AWS Cloud Architecture
 
-This document describes the AWS architecture supporting the "Gentle Walk" hyperlocal elder walking route planner in `ap-south-1` (Mumbai). Every AWS service was chosen to solve a concrete architectural bottleneck or failure mode in the application code.
+This document describes the production AWS architecture supporting the "Gentle Walk" hyperlocal elder walking route planner in `ap-south-1` (Mumbai). Every AWS service was chosen to solve a concrete architectural bottleneck or failure mode in the application code.
 
 ---
 
@@ -13,11 +13,12 @@ flowchart TD
     end
 
     subgraph Ingress["AWS Edge & Ingress"]
+        CF["Amazon CloudFront CDN (Edge Cache / HTTPS)<br/>(PriceClass_100, Gzip/Brotli, Static Asset Cache)"]
         ALB["ECS Express Auto-Provisioned ALB<br/>(HTTPS Ingress / Port 443)"]
     end
 
     subgraph ECS["Amazon ECS Express Mode on AWS Fargate (ap-south-1)"]
-        Task["Gentle Walk Spring Boot 3.3 Task<br/>1 vCPU / 2 GB RAM<br/>Local L1 Cache: Caffeine"]
+        Task["Gentle Walk Spring Boot 3.3 Task<br/>1 vCPU / 2 GB RAM<br/>Local L1 Cache: Caffeine<br/>Places Search Service"]
     end
 
     subgraph DataPipeline["Pre-warming Data Pipeline (Async Background)"]
@@ -34,22 +35,32 @@ flowchart TD
     subgraph Upstream["Upstream Public APIs"]
         OpenMeteo["Open-Meteo Air Quality & Elevation API"]
         Overpass["OpenStreetMap Overpass API Mirrors"]
+        Nominatim["OpenStreetMap Nominatim Geocoding"]
     end
 
-    subgraph Ops["Observability & Security"]
-        CW["Amazon CloudWatch Logs<br/>(/ecs/gentle-walk, 7-day retention)"]
+    subgraph Ops["Observability & Operations"]
+        CW_Logs["Amazon CloudWatch Logs<br/>(/ecs/gentle-walk, 7-day retention)"]
+        CW_Alarms["CloudWatch Alarms<br/>(gentle-walk-5xx-errors, gentle-walk-high-latency)"]
+        CW_Dash["CloudWatch Dashboard<br/>(gentle-walk-operations)"]
+        CI["GitHub Actions CI/CD Pipeline<br/>(100% Offline Tests, Build & Deploy)"]
         IAM["Least-Privilege IAM Roles<br/>(Task Role: Read-only DDB & S3)"]
     end
 
-    Browser -->|HTTPS| ALB
+    Browser -->|HTTPS| CF
+    CF -->|Pass-through /api/*| ALB
+    CF -.->|Edge Cached Static UI| Browser
     ALB -->|Forward| Task
     Task -->|1. L1 Cache Check| Task
     Task -->|2. L2 Cache Hit| DDB
     Task -->|2. L2 Cache Hit| S3
     Task -.->|3. Fallback on L2 Miss| OpenMeteo
     Task -.->|3. Fallback on L2 Miss| Overpass
-    Task -->|Telemetry| CW
+    Task -->|Geocoding Proxy| Nominatim
+    Task -->|Telemetry| CW_Logs
+    ALB -->|Metrics| CW_Alarms
+    ALB -->|Metrics| CW_Dash
     IAM -.->|Applies to| Task
+    CI -->|Deploys to| ECS
 
     EB_Air -->|Trigger Action: air| Lambda
     EB_OSM -->|Trigger Action: overpass| Lambda
@@ -64,9 +75,9 @@ flowchart TD
 ## 2. Service-by-Service Rationale & Problem-Solving Impact
 
 ### 1. Amazon ECS Express Mode on AWS Fargate
-- **Problem in the code**: The backend runs Spring Boot 3.3 (Java 21) with JGraphT Dijkstra routing, requiring predictable CPU and ~1.5 GB memory for in-memory graph execution. Previously, App Runner was suggested, but AWS closed App Runner to new customers. Traditional ECS required manually orchestrating ALBs, target groups, VPC routing, and autoscaling policies.
-- **AWS Service**: `Amazon ECS Express Mode on Fargate` (1 vCPU, 2 GB RAM, 1–2 replica autoscaling).
-- **Measured Result**: Zero EC2 instances to patch; single CLI command provisioned an HTTPS endpoint, ALB, target group, and auto-scaling container. Cold start complete in 13.5s.
+- **Problem in the code**: The backend runs Spring Boot 3.3 (Java 21) with JGraphT Dijkstra routing, requiring predictable CPU and ~1.5 GB memory for in-memory graph execution. Traditional ECS required manually orchestrating ALBs, target groups, VPC routing, and autoscaling policies.
+- **AWS Service**: `Amazon ECS Express Mode on Fargate` (1 vCPU, 2 GB RAM, 1–2 replica autoscaling, active service `gentle-walk-app` in `gentle-walk-cluster`).
+- **Measured Result**: Zero EC2 instances to patch; single command provisioned an HTTPS endpoint, ALB, target group, and auto-scaling container. Cold start complete in 13.9s.
 - **Why not the alternative?**:
   - *App Runner*: Closed to new AWS accounts.
   - *EC2*: Requires managing OS updates, AMI baking, and idle costs for underutilized instances.
@@ -99,7 +110,7 @@ flowchart TD
 - **AWS Service**: `AWS Lambda` (`gentle-walk-cache-refresher`, Python 3.12) triggered by `EventBridge Scheduler`:
   - `gentle-walk-air-rule`: Triggers air quality refresh every 30 minutes.
   - `gentle-walk-overpass-rule`: Triggers OSM graph refresh daily at 02:00 UTC.
-  - Curated locations are sourced from `curated-places.json` (Lodhi Gardens, Cubbon Park, Sanjay Van, Connaught Place, Chennai Central).
+  - Curated locations are sourced from `curated-places.json` (Lodhi Gardens, Cubbon Park, Sanjay Van, Connaught Place, Chennai Central, Crescent Park).
 - **Measured Result**: Tasks never need to query external APIs for curated walking zones during user requests.
 - **Why not the alternative?**:
   - *Background thread inside Spring Boot*: Cannot coordinate across multiple ECS tasks; dies when the container restarts; wastes Fargate task CPU cycles.
@@ -107,9 +118,31 @@ flowchart TD
 
 ---
 
-### 5. Amazon CloudWatch Logs & IAM Least Privilege
-- **Problem in the code**: Debugging container bootstrap issues and verifying cache hit rates requires centralized logging. Over-privileged IAM roles pose major security risks.
+### 5. Amazon CloudWatch Operations & Monitoring (Phase 3)
+- **Problem in the code**: Production reliability requires real-time alerting for 5xx failures (upstream API failures or unhandled exceptions) and high latency that could strand elderly users waiting for route calculations.
 - **AWS Services**:
-  - `CloudWatch Log Group` (`/ecs/gentle-walk`): 7-day retention limit strictly enforces cost control.
-  - `gentle-walk-ecs-task-role`: Strictly scoped IAM policy allowing ONLY `dynamodb:GetItem` on `gentle-walk-air-quality` and `s3:GetObject` on `gentle-walk-overpass-cache-651694719691/*` (zero wildcard admin privileges).
-- **Measured Result**: Clear audit trail confirming DynamoDB and S3 cache hits (`Cache HIT in AWS S3`, `Cache HIT in AWS DynamoDB`), with zero credentials stored in application code or configuration.
+  - `gentle-walk-5xx-errors`: CloudWatch Metric Alarm triggering when `HTTPCode_Target_5XX_Count` >= 5 within a 5-minute period.
+  - `gentle-walk-high-latency`: CloudWatch Metric Alarm triggering when average `TargetResponseTime` exceeds 2.0s over 5 minutes.
+  - `gentle-walk-operations`: CloudWatch Dashboard providing live 4-pane visibility:
+    1. Total Request Volume (`RequestCount`).
+    2. Latency Metrics (Average & p95 `TargetResponseTime`).
+    3. HTTP Status Codes (`2XX`, `4XX`, `5XX` breakdowns).
+    4. ECS Fargate Resource Utilization (`CPUUtilization`, `MemoryUtilization`).
+- **Measured Result**: Zero manual monitoring required; alerts fire proactively if upstream OSM or weather latency degrades.
+
+---
+
+### 6. Edge Caching & Automated CI/CD (Phase 3)
+- **Amazon CloudFront**:
+  - IaC template in [`deploy/deploy-cloudfront.sh`](file:///home/snorlax/Desktop/amazon_environment/deploy/deploy-cloudfront.sh).
+  - PriceClass: `PriceClass_100` (India, US, Europe) for cost minimization.
+  - Caching optimized (`658327ea-f89d-4fab-a63d-7e88639e58f6`) for static PWA assets (`/assets/*`, `.js`, `.css`), with Brotli/Gzip compression.
+  - Pass-through caching disabled (`4135ea2d-6df8-44a3-9df3-4b5a84be39ad`) + AllViewerExceptHostHeader (`b689b0a8-53d0-40ab-baf2-68738e2966ac`) for `/api/*` ensuring real-time pollution calculations.
+  *(Note: CloudFront distribution creation on this specific AWS account requires one-time AWS Support verification for anti-fraud; the complete IaC script is validated and prepared in `/deploy/deploy-cloudfront.sh`)*.
+- **GitHub Actions CI/CD Pipeline**:
+  - Located in [`.github/workflows/ci.yml`](file:///home/snorlax/Desktop/amazon_environment/.github/workflows/ci.yml).
+  - Automatically executes on push to `main`:
+    1. Bundles Vite PWA frontend.
+    2. Runs all 34 backend unit & integration tests 100% offline.
+    3. Builds container image via Jib with Java 21 JRE Alpine base.
+    4. Deploys updated service revision to AWS ECS Express Mode.
