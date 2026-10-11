@@ -6,3 +6,4 @@ target/
 node_modules/
 dist/
 .DS_Store
+src/main/resources/static/

@@ -18,6 +18,7 @@
             maven
             nodejs
             awscli2
+            skopeo
           ];
 
           shellHook = ''

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+echo "=========================================================="
+echo "      TEARDOWN: Removing all 'project=gentle-walk' AWS Resources"
+echo "=========================================================="
+
+AWS_REGION="ap-south-1"
+CLUSTER_NAME="gentle-walk-cluster"
+SERVICE_NAME="gentle-walk-service"
+
+# 1. Delete ECS Express Gateway Services
+echo "Deleting ECS Express Gateway Service..."
+aws ecs delete-express-gateway-service \
+  --service-name "gentle-walk-app" \
+  --cluster "${CLUSTER_NAME}" 2>/dev/null || true
+
+aws ecs delete-express-gateway-service \
+  --service-name "gentle-walk-service" \
+  --cluster "${CLUSTER_NAME}" 2>/dev/null || true
+
+# 2. Delete ECS Cluster
+echo "Deleting ECS Cluster..."
+aws ecs delete-cluster --cluster "${CLUSTER_NAME}" 2>/dev/null || true
+
+# 3. Delete IAM Roles & Policies
+echo "Deleting IAM Roles..."
+aws iam detach-role-policy \
+  --role-name gentle-walk-ecs-execution-role \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy 2>/dev/null || true
+
+aws iam delete-role-policy \
+  --role-name gentle-walk-ecs-execution-role \
+  --policy-name gentle-walk-ecs-execution-cwlogs 2>/dev/null || true
+
+aws iam delete-role --role-name gentle-walk-ecs-execution-role 2>/dev/null || true
+
+aws iam detach-role-policy \
+  --role-name gentle-walk-ecs-infrastructure-role \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRoleforExpressGatewayServices 2>/dev/null || true
+
+aws iam delete-role --role-name gentle-walk-ecs-infrastructure-role 2>/dev/null || true
+
+aws iam delete-role --role-name gentle-walk-ecs-task-role 2>/dev/null || true
+
+# 4. Delete CloudWatch Logs
+echo "Deleting CloudWatch Log Group..."
+aws logs delete-log-group --log-group-name /ecs/gentle-walk 2>/dev/null || true
+
+# 5. Delete ECR Repository
+echo "Deleting ECR Repository..."
+aws ecr delete-repository --repository-name gentle-walk --force 2>/dev/null || true
+
+echo "=========================================================="
+echo " Teardown completed. All billable resources destroyed."
+echo "=========================================================="
