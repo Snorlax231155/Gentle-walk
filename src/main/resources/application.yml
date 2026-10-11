@@ -75,4 +75,11 @@ gentlewalk:
       - "http://127.0.0.1:5173"
       - "http://127.0.0.1:3000"
 
+  # Cache storage configuration: caffeine (default, offline/local) or aws (DynamoDB & S3 shared cache)
+  cache:
+    store: ${GENTLEWALK_CACHE_STORE:caffeine}
+    air-quality-table: ${GENTLEWALK_AIR_QUALITY_TABLE:gentle-walk-air-quality}
+    overpass-bucket: ${GENTLEWALK_OVERPASS_BUCKET:gentle-walk-overpass-cache-651694719691}
+    region: ${AWS_REGION:ap-south-1}
+
   disclaimer: "Gentle Walk is an algorithmic planning aid and not medical advice. Air quality data and exposure models are estimates. Please consult your physician and local health advisories."

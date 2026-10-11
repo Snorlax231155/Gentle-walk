@@ -37,7 +37,7 @@ class AirQualityClientTest {
                 5000
         );
         AppProperties properties = new AppProperties(
-                60.0, 0.02, null, null, 0.3, 5.0, 0.9, null, null, null, openMeteoProps, null, "Disclaimer"
+                60.0, 0.02, null, null, 0.3, 5.0, 0.9, null, null, null, openMeteoProps, null, "Disclaimer", null
         );
 
         airQualityClient = new AirQualityClient(properties, builder);
@@ -72,5 +72,27 @@ class AirQualityClientTest {
         List<Double> result = airQualityClient.sanitizeAndNormalize24Hours(List.of());
         assertThat(result).hasSize(24);
         assertThat(result).isEqualTo(DemoAirData.get24HourSeries());
+    }
+
+    @Test
+    @DisplayName("When shared cache store returns data, it is used without contacting Open-Meteo")
+    void testSharedCacheHitBypassesHttp() {
+        com.gentlewalk.cache.SharedCacheStore mockStore = org.mockito.Mockito.mock(com.gentlewalk.cache.SharedCacheStore.class);
+        List<Double> cachedValues = java.util.Collections.nCopies(24, 25.0);
+        org.mockito.Mockito.when(mockStore.getAirQuality(28.59, 77.22))
+                .thenReturn(java.util.Optional.of(cachedValues));
+
+        AirQualityClient clientWithCache = new AirQualityClient(
+                new AppProperties(60.0, 0.02, null, null, 0.3, 5.0, 0.9, null, null, null, null, null, "Disclaimer", null),
+                RestClient.builder(),
+                mockStore
+        );
+
+        List<Double> result = clientWithCache.getHourlyPm25(28.59, 77.22);
+
+        assertThat(result).hasSize(24);
+        assertThat(result.get(0)).isEqualTo(25.0);
+        // Verify mockServer was never queried (no HTTP requests expected)
+        mockServer.verify();
     }
 }

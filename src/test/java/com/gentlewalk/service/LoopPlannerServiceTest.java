@@ -44,7 +44,8 @@ class LoopPlannerServiceTest {
                 null,
                 null,
                 null,
-                "Test Disclaimer"
+                "Test Disclaimer",
+                null
         );
 
         DoseService doseService = new DoseService(properties);

@@ -1,0 +1,7 @@
+[
+  { "name": "Lodhi Gardens, New Delhi", "lat": 28.5933, "lon": 77.2215, "radiusM": 800 },
+  { "name": "Cubbon Park, Bengaluru", "lat": 12.9763, "lon": 77.5929, "radiusM": 800 },
+  { "name": "Sanjay Van, South Delhi", "lat": 28.5284, "lon": 77.1741, "radiusM": 800 },
+  { "name": "Connaught Place, New Delhi", "lat": 28.6139, "lon": 77.2090, "radiusM": 800 },
+  { "name": "Chennai Central / Marina", "lat": 13.0801, "lon": 80.2808, "radiusM": 800 }
+]

@@ -39,7 +39,7 @@ class OverpassClientTest {
                 100L
         );
         AppProperties properties = new AppProperties(
-                60.0, 0.02, null, null, 0.3, 5.0, 0.9, null, null, overpassProps, null, null, "Disclaimer"
+                60.0, 0.02, null, null, 0.3, 5.0, 0.9, null, null, overpassProps, null, null, "Disclaimer", null
         );
 
         overpassClient = new OverpassClient(properties, builder);
@@ -66,5 +66,29 @@ class OverpassClientTest {
         assertThat(response.elements()).isNotEmpty();
         // Fixture contains 1 bench node, 3 highway ways, 1 park way
         assertThat(response.elements()).hasSize(5);
+    }
+
+    @Test
+    @DisplayName("When shared cache store returns data, Overpass HTTP mirrors are bypassed")
+    void testSharedCacheHitBypassesHttp() {
+        com.gentlewalk.cache.SharedCacheStore mockStore = org.mockito.Mockito.mock(com.gentlewalk.cache.SharedCacheStore.class);
+        OverpassResponse cachedResponse = new OverpassResponse(java.util.List.of(
+                new OverpassResponse.Element("node", 999L, 28.59, 77.22, null, null, null)
+        ));
+        org.mockito.Mockito.when(mockStore.getOverpassData(28.593, 77.222, 800))
+                .thenReturn(java.util.Optional.of(cachedResponse));
+
+        OverpassClient clientWithCache = new OverpassClient(
+                new AppProperties(60.0, 0.02, null, null, 0.3, 5.0, 0.9, null, null, null, null, null, "Disclaimer", null),
+                RestClient.builder(),
+                mockStore
+        );
+
+        OverpassResponse response = clientWithCache.fetchOsmData(28.593, 77.222, 800);
+
+        assertThat(response).isNotNull();
+        assertThat(response.elements()).hasSize(1);
+        assertThat(response.elements().get(0).id()).isEqualTo(999L);
+        mockServer.verify();
     }
 }

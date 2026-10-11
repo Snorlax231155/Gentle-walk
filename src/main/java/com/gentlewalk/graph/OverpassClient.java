@@ -1,5 +1,7 @@
 package com.gentlewalk.graph;
 
+import com.gentlewalk.cache.NoopSharedCacheStore;
+import com.gentlewalk.cache.SharedCacheStore;
 import com.gentlewalk.config.AppProperties;
 import com.gentlewalk.config.CacheConfig;
 import com.gentlewalk.graph.dto.OverpassResponse;
@@ -22,9 +24,12 @@ public class OverpassClient {
     private static final Logger log = LoggerFactory.getLogger(OverpassClient.class);
     private final RestClient restClient;
     private final AppProperties properties;
+    private final SharedCacheStore sharedCacheStore;
 
-    public OverpassClient(AppProperties properties, RestClient.Builder restClientBuilder) {
+    @org.springframework.beans.factory.annotation.Autowired
+    public OverpassClient(AppProperties properties, RestClient.Builder restClientBuilder, SharedCacheStore sharedCacheStore) {
         this.properties = properties;
+        this.sharedCacheStore = sharedCacheStore != null ? sharedCacheStore : new NoopSharedCacheStore();
         String userAgent = properties.overpass() != null && properties.overpass().userAgent() != null
                 ? properties.overpass().userAgent()
                 : "GentleWalk/1.0 (hackathon-elder-planner)";
@@ -34,8 +39,19 @@ public class OverpassClient {
                 .build();
     }
 
+    public OverpassClient(AppProperties properties, RestClient.Builder restClientBuilder) {
+        this(properties, restClientBuilder, new NoopSharedCacheStore());
+    }
+
     @Cacheable(value = CacheConfig.GRAPH_CACHE, key = "T(java.lang.String).format('%.3f,%.3f,%d', #lat, #lon, #radiusM)")
     public OverpassResponse fetchOsmData(double lat, double lon, int radiusM) {
+        // Check shared cache store first (e.g. AWS S3)
+        var cached = sharedCacheStore.getOverpassData(lat, lon, radiusM);
+        if (cached.isPresent()) {
+            log.info("Serving OpenStreetMap data from shared cache store for ({}, {}, {}m)", lat, lon, radiusM);
+            return cached.get();
+        }
+
         String configuredUrl = properties.overpass() != null && properties.overpass().baseUrl() != null
                 ? properties.overpass().baseUrl()
                 : "https://overpass.openstreetmap.fr/api/interpreter";

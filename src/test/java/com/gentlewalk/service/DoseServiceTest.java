@@ -31,7 +31,7 @@ class DoseServiceTest {
                 0.3,        // hotspot penalty
                 5.0,        // max slope low mobility %
                 0.9,        // bench cost multiplier
-                null, null, null, null, null, "Disclaimer"
+                null, null, null, null, null, "Disclaimer", null
         );
         doseService = new DoseService(properties);
     }

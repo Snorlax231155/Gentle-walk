@@ -12,6 +12,9 @@ import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import com.gentlewalk.cache.NoopSharedCacheStore;
+import com.gentlewalk.cache.SharedCacheStore;
+
 import java.util.List;
 
 @Component
@@ -20,14 +23,28 @@ public class AirQualityClient {
     private static final Logger log = LoggerFactory.getLogger(AirQualityClient.class);
     private final RestClient restClient;
     private final AppProperties properties;
+    private final SharedCacheStore sharedCacheStore;
 
-    public AirQualityClient(AppProperties properties, RestClient.Builder restClientBuilder) {
+    @org.springframework.beans.factory.annotation.Autowired
+    public AirQualityClient(AppProperties properties, RestClient.Builder restClientBuilder, SharedCacheStore sharedCacheStore) {
         this.properties = properties;
         this.restClient = restClientBuilder.build();
+        this.sharedCacheStore = sharedCacheStore != null ? sharedCacheStore : new NoopSharedCacheStore();
+    }
+
+    public AirQualityClient(AppProperties properties, RestClient.Builder restClientBuilder) {
+        this(properties, restClientBuilder, new NoopSharedCacheStore());
     }
 
     @Cacheable(value = CacheConfig.AIR_QUALITY_CACHE, key = "T(java.lang.String).format('%.2f,%.2f', #lat, #lon)")
     public List<Double> getHourlyPm25(double lat, double lon) {
+        // Check shared cache store first (e.g. AWS DynamoDB)
+        var cached = sharedCacheStore.getAirQuality(lat, lon);
+        if (cached.isPresent()) {
+            log.info("Serving hourly PM2.5 from shared cache store for ({}, {})", lat, lon);
+            return sanitizeAndNormalize24Hours(cached.get());
+        }
+
         String baseUrl = properties.openMeteo() != null && properties.openMeteo().airQualityBaseUrl() != null
                 ? properties.openMeteo().airQualityBaseUrl()
                 : "https://air-quality-api.open-meteo.com/v1/air-quality";

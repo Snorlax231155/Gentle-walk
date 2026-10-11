@@ -22,7 +22,7 @@ class WindowServiceTest {
         AppProperties.TrafficLightProperties trafficLightProps = new AppProperties.TrafficLightProperties(60.0, 90.0);
         AppProperties properties = new AppProperties(
                 60.0, 0.02, null, null, 0.3, 5.0, 0.9,
-                trafficLightProps, null, null, null, null, "Disclaimer"
+                trafficLightProps, null, null, null, null, "Disclaimer", null
         );
         windowService = new WindowService(properties);
     }

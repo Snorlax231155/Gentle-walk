@@ -18,8 +18,36 @@ public record AppProperties(
         OverpassProperties overpass,
         OpenMeteoProperties openMeteo,
         CorsProperties cors,
-        String disclaimer
+        String disclaimer,
+        CacheProperties cache
 ) {
+    public AppProperties {
+        if (cache == null) {
+            cache = new CacheProperties("caffeine", "gentle-walk-air-quality", "gentle-walk-overpass-cache-651694719691", "ap-south-1");
+        }
+    }
+
+    public record CacheProperties(
+            String store,
+            String airQualityTable,
+            String overpassBucket,
+            String region
+    ) {
+        public CacheProperties {
+            if (store == null || store.isBlank()) {
+                store = "caffeine";
+            }
+            if (airQualityTable == null || airQualityTable.isBlank()) {
+                airQualityTable = "gentle-walk-air-quality";
+            }
+            if (overpassBucket == null || overpassBucket.isBlank()) {
+                overpassBucket = "gentle-walk-overpass-cache-651694719691";
+            }
+            if (region == null || region.isBlank()) {
+                region = "ap-south-1";
+            }
+        }
+    }
     public record SensitivityProperties(
             double normal,
             double sensitive,
