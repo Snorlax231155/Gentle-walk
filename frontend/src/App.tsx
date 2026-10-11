@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { PlanResponse, WindowResponse, Hotspot, Sensitivity, TrafficLight, CommunityRoute, LoopResult } from './types';
+import { PlanResponse, WindowResponse, Hotspot, Sensitivity, TrafficLight, CommunityRoute, LoopResult, CommunityStop, StopType } from './types';
 import { translations, Language } from './i18n/translations';
 import { fetchWindow, planWalk, cheerCommunityRoute } from './services/api';
 import { ControlsSidebar } from './components/ControlsSidebar';
@@ -28,6 +28,7 @@ import {
   Compass,
   Heart,
   Share2,
+  Edit3,
 } from 'lucide-react';
 
 
@@ -93,14 +94,61 @@ export function App() {
   const [locationName, setLocationName] = useState<string>('Lodhi Gardens, New Delhi');
   const [locating, setLocating] = useState<boolean>(false);
 
-  // Planner Options
-  const [mapClickMode, setMapClickMode] = useState<'set-start' | 'add-hotspot'>('set-start');
+  // Planner Options & Studio Drawing Mode
+  const [mapClickMode, setMapClickMode] = useState<'set-start' | 'add-hotspot' | 'draw-route' | 'place-stop'>('set-start');
+  const [drawnCoordinates, setDrawnCoordinates] = useState<[number, number][]>([]);
+  const [customPlacedStops, setCustomPlacedStops] = useState<CommunityStop[]>([]);
+  const [selectedStudioStopType, setSelectedStudioStopType] = useState<StopType>('BENCH');
   const [radiusM, setRadiusM] = useState<number>(800);
   const [minutes, setMinutes] = useState<number>(20);
   const [sensitivity, setSensitivity] = useState<Sensitivity>('NORMAL');
   const [lowMobility, setLowMobility] = useState<boolean>(false);
   const [hour, setHour] = useState<number>(15);
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
+
+  const handleAddDrawnPoint = (lon: number, lat: number) => {
+    setDrawnCoordinates((prev) => [...prev, [lon, lat]]);
+  };
+
+  const handleUndoDrawnPoint = () => {
+    setDrawnCoordinates((prev) => prev.slice(0, -1));
+  };
+
+  const handleCloseDrawnLoop = () => {
+    if (drawnCoordinates.length >= 3) {
+      const first = drawnCoordinates[0];
+      setDrawnCoordinates((prev) => [...prev, first]);
+    }
+  };
+
+  const handleClearDrawnRoute = () => {
+    setDrawnCoordinates([]);
+    setCustomPlacedStops([]);
+  };
+
+  const handleAddCustomPlacedStop = (lat: number, lon: number, type: StopType) => {
+    const defaultName =
+      type === 'BENCH' ? `Rest Bench #${customPlacedStops.filter((s) => s.type === 'BENCH').length + 1}` :
+      type === 'SHADE' ? 'Shaded Canopy Rest' :
+      type === 'WATER' ? 'Clean Water Dispenser' :
+      type === 'GARDEN' ? 'Fragrant Flower Garden' : 'Peaceful Air Pavilion';
+
+    const defaultDesc =
+      type === 'BENCH' ? 'Comfortable seating for rest intervals.' :
+      type === 'SHADE' ? 'Tree canopy shelter from midday sun.' :
+      type === 'WATER' ? 'Filtered drinking water fountain.' :
+      type === 'GARDEN' ? 'Sensory floral trail section.' : 'Safe, low-dust quiet rest zone.';
+
+    const newStop: CommunityStop = {
+      id: `stop-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      name: defaultName,
+      type: type,
+      description: defaultDesc,
+      lat,
+      lon,
+    };
+    setCustomPlacedStops((prev) => [...prev, newStop]);
+  };
 
   // Map Provider & Google Maps API key
   const [mapProvider, setMapProvider] = useState<'osm' | 'google'>('osm');
@@ -458,9 +506,10 @@ export function App() {
                 <button
                   type="button"
                   onClick={() => setIsSubmitModalOpen(true)}
-                  className="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+                  className="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
                 >
-                  + Submit
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Draw & Share Trail</span>
                 </button>
               </div>
             </div>
@@ -808,6 +857,17 @@ export function App() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
+                    {/* Draw Custom Trail Button */}
+                    <button
+                      type="button"
+                      onClick={() => setIsSubmitModalOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-2xs transition-all cursor-pointer"
+                      title="Open Trail Studio to draw routes and place seating landmarks on map"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Draw Trail</span>
+                    </button>
+
                     {/* Share / Submit Current Route Button */}
                     <button
                       type="button"
@@ -879,6 +939,16 @@ export function App() {
                       markHotspot: t.markHotspot,
                     }}
                     communityStops={activeCommunityRoute?.stops || []}
+                    drawnCoordinates={drawnCoordinates}
+                    onAddDrawnPoint={handleAddDrawnPoint}
+                    customPlacedStops={customPlacedStops}
+                    onAddCustomPlacedStop={handleAddCustomPlacedStop}
+                    selectedStopType={selectedStudioStopType}
+                    onSelectedStopTypeChange={setSelectedStudioStopType}
+                    onUndoDrawnPoint={handleUndoDrawnPoint}
+                    onCloseDrawnLoop={handleCloseDrawnLoop}
+                    onClearDrawnRoute={handleClearDrawnRoute}
+                    onOpenSubmitDrawnRoute={() => setIsSubmitModalOpen(true)}
                   />
                 )}
               </div>
@@ -943,7 +1013,7 @@ export function App() {
         }}
       />
 
-      {/* Submit Community Route Modal */}
+      {/* Submit Community Route Modal (with Interactive Trail Studio) */}
       <SubmitRouteModal
         isOpen={isSubmitModalOpen}
         onClose={() => setIsSubmitModalOpen(false)}
@@ -953,6 +1023,8 @@ export function App() {
         locationName={locationName}
         estimatedPm25={windowData?.window.meanPm25}
         onRouteSubmitted={handleRouteSubmitted}
+        initialDrawnCoordinates={drawnCoordinates.length > 0 ? drawnCoordinates : undefined}
+        initialCustomStops={customPlacedStops.length > 0 ? customPlacedStops : undefined}
       />
     </div>
   );
