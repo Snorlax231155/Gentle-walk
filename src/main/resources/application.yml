@@ -74,6 +74,9 @@ gentlewalk:
       - "http://localhost:3000"
       - "http://127.0.0.1:5173"
       - "http://127.0.0.1:3000"
+      - "https://*.on.aws"
+      - "https://*.cloudfront.net"
+      - "*"
 
   # Cache storage configuration: caffeine (default, offline/local) or aws (DynamoDB & S3 shared cache)
   cache:

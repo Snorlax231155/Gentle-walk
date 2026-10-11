@@ -22,10 +22,10 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
         List<String> origins = properties.cors() != null && properties.cors().allowedOrigins() != null
                 ? properties.cors().allowedOrigins()
-                : List.of("http://localhost:5173", "http://localhost:3000");
+                : List.of("http://localhost:5173", "http://localhost:3000", "https://*.on.aws", "https://*.cloudfront.net", "*");
 
-        config.setAllowedOrigins(origins);
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedOriginPatterns(origins);
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
