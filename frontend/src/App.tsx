@@ -11,6 +11,7 @@ import { MetricCards } from './components/MetricCards';
 import { PlaceSearch } from './components/PlaceSearch';
 import { CommunityTrailsModal } from './components/CommunityTrailsModal';
 import { SubmitRouteModal } from './components/SubmitRouteModal';
+import { InstallAppBanner } from './components/InstallAppBanner';
 import {
   Shield,
   AlertCircle,
@@ -29,6 +30,7 @@ import {
   Heart,
   Share2,
   Edit3,
+  Download,
 } from 'lucide-react';
 
 
@@ -401,6 +403,18 @@ export function App() {
               </div>
 
               <div className="flex items-center gap-2">
+                {/* Install App Button */}
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('gentlewalk-trigger-install'))}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-2xs transition-all cursor-pointer"
+                  title="Install Gentle Walk as an app on your phone"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden sm:inline">Install App</span>
+                  <span className="sm:hidden">Install</span>
+                </button>
+
                 {/* Community Trails Button */}
                 <button
                   type="button"
@@ -655,6 +669,17 @@ export function App() {
 
               {/* Current Destination Display & Community Action */}
               <div className="flex items-center gap-2">
+                {/* Install App Button */}
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('gentlewalk-trigger-install'))}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-2xs"
+                  title="Install Gentle Walk as an app on your phone"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Install App</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setIsCommunityModalOpen(true)}
@@ -1026,6 +1051,9 @@ export function App() {
         initialDrawnCoordinates={drawnCoordinates.length > 0 ? drawnCoordinates : undefined}
         initialCustomStops={customPlacedStops.length > 0 ? customPlacedStops : undefined}
       />
+
+      {/* Mobile Sticky In-App PWA Install Bar & Modal */}
+      <InstallAppBanner />
     </div>
   );
 }
