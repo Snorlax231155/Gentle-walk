@@ -100,6 +100,14 @@ public class ElevationClient {
                     int originalIdx = missingIndices.get(i + b);
                     results.set(originalIdx, 0.0);
                 }
+                // If it's a 429 rate limit, stop hammering Open-Meteo and default remaining to flat (0.0)
+                if (e.getMessage() != null && e.getMessage().contains("429")) {
+                    log.warn("Rate limit hit on Open-Meteo elevation API; gracefully defaulting remaining {} points to 0.0m", missingCoords.size() - (i + batch.size()));
+                    for (int rem = i + batch.size(); rem < missingCoords.size(); rem++) {
+                        results.set(missingIndices.get(rem), 0.0);
+                    }
+                    break;
+                }
             }
         }
 

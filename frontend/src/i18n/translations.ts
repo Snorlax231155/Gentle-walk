@@ -36,6 +36,11 @@ export const translations = {
     pm25ChartTitle: "24-Hour PM2.5 Forecast (µg/m³)",
     selectedHour: "Selected Hour",
     errorTitle: "Unable to Plan Route",
+    advancedSettings: "Advanced Settings & Tuning",
+    startWalkingGoogleMaps: "Start Walking in Google Maps",
+    satelliteView: "Satellite View",
+    streetView: "Street View",
+    gentleSlopeNotice: "Excludes paths with >5% incline for elder safety",
   },
   hi: {
     appTitle: "जेंटल वॉक (Gentle Walk)",
@@ -72,5 +77,10 @@ export const translations = {
     pm25ChartTitle: "24 घंटे का PM2.5 वायु पूर्वानुमान (µg/m³)",
     selectedHour: "चुना हुआ समय",
     errorTitle: "मार्ग खोजने में त्रुटि",
+    advancedSettings: "उन्नत सेटिंग्स और विकल्प",
+    startWalkingGoogleMaps: "गूगल मैप्स में चलना शुरू करें",
+    satelliteView: "सैटेलाइट दृश्य",
+    streetView: "सड़क दृश्य",
+    gentleSlopeNotice: "बुजुर्गों के आराम के लिए 5% से अधिक ढलान वाले मार्ग हटाए गए हैं",
   }
 };

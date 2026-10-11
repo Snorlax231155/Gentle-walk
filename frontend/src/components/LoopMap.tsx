@@ -18,6 +18,8 @@ const hotspotIcon = L.divIcon({
   iconAnchor: [12, 12],
 });
 
+export type MapLayer = 'osm' | 'google-street' | 'google-satellite';
+
 interface LoopMapProps {
   center: [number, number];
   cleanLoop?: LoopResult;
@@ -26,6 +28,8 @@ interface LoopMapProps {
   onAddHotspot: (lat: number, lon: number) => void;
   cleanLoopLabel: string;
   typicalLoopLabel: string;
+  layer?: MapLayer;
+  onLayerChange?: (l: MapLayer) => void;
 }
 
 function MapViewController({ center, cleanCoords }: { center: [number, number]; cleanCoords?: [number, number][] }) {
@@ -60,7 +64,17 @@ export const LoopMap: React.FC<LoopMapProps> = ({
   onAddHotspot,
   cleanLoopLabel,
   typicalLoopLabel,
+  layer = 'google-satellite',
+  onLayerChange,
 }) => {
+  const [internalLayer, setInternalLayer] = React.useState<MapLayer>(layer);
+  const activeLayer = layer !== undefined && onLayerChange ? layer : internalLayer;
+
+  const handleSelectLayer = (newLayer: MapLayer) => {
+    setInternalLayer(newLayer);
+    if (onLayerChange) onLayerChange(newLayer);
+  };
+
   // Convert GeoJSON [lon, lat] pairs to Leaflet [lat, lon] pairs
   const cleanLatLngs: [number, number][] = cleanLoop
     ? cleanLoop.coordinates.map(([lon, lat]) => [lat, lon])
@@ -72,8 +86,64 @@ export const LoopMap: React.FC<LoopMapProps> = ({
 
   const startPoint: [number, number] = cleanLatLngs.length > 0 ? cleanLatLngs[0] : center;
 
+  // Tile layer URL based on selected layer
+  const getTileUrl = () => {
+    switch (activeLayer) {
+      case 'google-satellite':
+        return 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'; // Google Hybrid (Satellite + Road labels)
+      case 'google-street':
+        return 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'; // Google Maps Streets
+      case 'osm':
+      default:
+        return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'; // OpenStreetMap
+    }
+  };
+
+  const getAttribution = () => {
+    if (activeLayer === 'osm') {
+      return '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+    }
+    return '&copy; Google Maps';
+  };
+
   return (
-    <div className="relative w-full h-[460px] rounded-xl overflow-hidden shadow-sm border border-slate-200">
+    <div className="relative w-full h-[480px] rounded-2xl overflow-hidden shadow-sm border border-slate-200">
+      {/* Map Layer Switcher Pills */}
+      <div className="absolute top-3 left-14 z-[1000] flex bg-white/95 backdrop-blur-sm p-1 rounded-xl shadow-md border border-slate-200 text-xs font-bold gap-1">
+        <button
+          type="button"
+          onClick={() => handleSelectLayer('google-satellite')}
+          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+            activeLayer === 'google-satellite'
+              ? 'bg-emerald-700 text-white shadow-xs'
+              : 'text-slate-700 hover:bg-slate-100'
+          }`}
+        >
+          🛰️ Satellite
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSelectLayer('google-street')}
+          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+            activeLayer === 'google-street'
+              ? 'bg-emerald-700 text-white shadow-xs'
+              : 'text-slate-700 hover:bg-slate-100'
+          }`}
+        >
+          🗺️ Street
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSelectLayer('osm')}
+          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+            activeLayer === 'osm'
+              ? 'bg-emerald-700 text-white shadow-xs'
+              : 'text-slate-700 hover:bg-slate-100'
+          }`}
+        >
+          🌍 OSM
+        </button>
+      </div>
       <MapContainer
         center={center}
         zoom={16}
@@ -81,8 +151,9 @@ export const LoopMap: React.FC<LoopMapProps> = ({
         scrollWheelZoom={true}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          key={activeLayer}
+          attribution={getAttribution()}
+          url={getTileUrl()}
         />
 
         <MapViewController center={center} cleanCoords={cleanLatLngs} />
@@ -93,10 +164,10 @@ export const LoopMap: React.FC<LoopMapProps> = ({
           <Polyline
             positions={typicalLatLngs}
             pathOptions={{
-              color: '#64748b',
+              color: '#94a3b8',
               weight: 4,
               dashArray: '8, 8',
-              opacity: 0.85,
+              opacity: 0.9,
             }}
           >
             <Popup>{typicalLoopLabel}</Popup>
@@ -108,7 +179,7 @@ export const LoopMap: React.FC<LoopMapProps> = ({
           <Polyline
             positions={cleanLatLngs}
             pathOptions={{
-              color: '#15803d',
+              color: '#16a34a',
               weight: 6,
               opacity: 0.95,
               lineCap: 'round',

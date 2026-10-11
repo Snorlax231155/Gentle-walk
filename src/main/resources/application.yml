@@ -57,7 +57,7 @@ gentlewalk:
 
   # External API endpoints and polite configuration
   overpass:
-    base-url: https://overpass-api.de/api/interpreter
+    base-url: https://overpass.openstreetmap.fr/api/interpreter
     user-agent: "GentleWalk/1.0 (hackathon-elder-planner; contact: dev@gentlewalk.local)"
     timeout-ms: 25000
     retry-count: 1
