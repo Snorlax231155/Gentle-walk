@@ -18,6 +18,8 @@ export function App() {
   const [demo, setDemo] = useState<boolean>(false);
   const [lat, setLat] = useState<number>(28.5933);
   const [lon, setLon] = useState<number>(77.2215);
+  const [locationName, setLocationName] = useState<string>('Lodhi Gardens, New Delhi');
+  const [mapClickMode, setMapClickMode] = useState<'set-start' | 'add-hotspot'>('set-start');
   const [radiusM, setRadiusM] = useState<number>(800);
   const [minutes, setMinutes] = useState<number>(20);
   const [sensitivity, setSensitivity] = useState<Sensitivity>('NORMAL');
@@ -147,6 +149,13 @@ export function App() {
     return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${waypointsParam}&travelmode=walking`;
   }, [planData]);
 
+  const handleSetStartFromMap = (newLat: number, newLon: number) => {
+    setLat(newLat);
+    setLon(newLon);
+    setLocationName(`Map Pin (${newLat.toFixed(3)}, ${newLon.toFixed(3)})`);
+    setDemo(false);
+  };
+
   return (
     <div className="min-h-screen bg-slate-100/70 pb-16 font-sans">
       {/* 1. Demo Mode Warning Banner */}
@@ -186,11 +195,11 @@ export function App() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-1.5">
-              <span>📍</span>
-              <span className="hidden md:inline">Current Area:</span>
-              <span className="text-emerald-800 font-black">
-                {lat === 28.5933 && lon === 77.2215 ? 'Lodhi Gardens' : `${lat.toFixed(3)}, ${lon.toFixed(3)}`}
+            <span className="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-1.5 max-w-[280px]">
+              <span className="shrink-0">📍</span>
+              <span className="hidden md:inline text-slate-500">Destination:</span>
+              <span className="text-emerald-800 font-black truncate">
+                {locationName}
               </span>
             </span>
           </div>
@@ -212,6 +221,8 @@ export function App() {
               setLat(newLat);
               setLon(newLon);
             }}
+            placeName={locationName}
+            onSelectPlaceName={setLocationName}
             radiusM={radiusM}
             onRadiusChange={setRadiusM}
             minutes={minutes}
@@ -333,6 +344,8 @@ export function App() {
                 typicalLoop={planData?.baselineLoop}
                 hotspots={hotspots}
                 onAddHotspot={handleAddHotspot}
+                onSetStartCoords={handleSetStartFromMap}
+                clickAction={mapClickMode}
                 cleanLoopLabel={t.cleanLoop}
                 typicalLoopLabel={t.typicalLoop}
               />
@@ -343,8 +356,15 @@ export function App() {
                 typicalLoop={planData?.baselineLoop}
                 hotspots={hotspots}
                 onAddHotspot={handleAddHotspot}
+                onSetStartCoords={handleSetStartFromMap}
+                clickAction={mapClickMode}
+                onClickActionChange={setMapClickMode}
                 cleanLoopLabel={t.cleanLoop}
                 typicalLoopLabel={t.typicalLoop}
+                labels={{
+                  setStartPoint: t.setStartPoint,
+                  markHotspot: t.markHotspot,
+                }}
               />
             )}
           </div>

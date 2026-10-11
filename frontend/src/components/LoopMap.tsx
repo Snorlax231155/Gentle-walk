@@ -19,6 +19,7 @@ const hotspotIcon = L.divIcon({
 });
 
 export type MapLayer = 'osm' | 'google-street' | 'google-satellite';
+export type MapClickAction = 'set-start' | 'add-hotspot';
 
 interface LoopMapProps {
   center: [number, number];
@@ -26,10 +27,17 @@ interface LoopMapProps {
   typicalLoop?: LoopResult;
   hotspots: Hotspot[];
   onAddHotspot: (lat: number, lon: number) => void;
+  onSetStartCoords?: (lat: number, lon: number) => void;
   cleanLoopLabel: string;
   typicalLoopLabel: string;
   layer?: MapLayer;
   onLayerChange?: (l: MapLayer) => void;
+  clickAction?: MapClickAction;
+  onClickActionChange?: (action: MapClickAction) => void;
+  labels?: {
+    setStartPoint?: string;
+    markHotspot?: string;
+  };
 }
 
 function MapViewController({ center, cleanCoords }: { center: [number, number]; cleanCoords?: [number, number][] }) {
@@ -47,10 +55,25 @@ function MapViewController({ center, cleanCoords }: { center: [number, number]; 
   return null;
 }
 
-function MapClickHandler({ onAddHotspot }: { onAddHotspot: (lat: number, lon: number) => void }) {
+function MapClickHandler({
+  clickAction,
+  onAddHotspot,
+  onSetStartCoords,
+}: {
+  clickAction: MapClickAction;
+  onAddHotspot: (lat: number, lon: number) => void;
+  onSetStartCoords?: (lat: number, lon: number) => void;
+}) {
   useMapEvents({
     click(e) {
-      onAddHotspot(e.latlng.lat, e.latlng.lng);
+      if (clickAction === 'set-start' && onSetStartCoords) {
+        onSetStartCoords(
+          Math.round(e.latlng.lat * 10000) / 10000,
+          Math.round(e.latlng.lng * 10000) / 10000
+        );
+      } else {
+        onAddHotspot(e.latlng.lat, e.latlng.lng);
+      }
     },
   });
   return null;
@@ -62,10 +85,14 @@ export const LoopMap: React.FC<LoopMapProps> = ({
   typicalLoop,
   hotspots,
   onAddHotspot,
+  onSetStartCoords,
   cleanLoopLabel,
   typicalLoopLabel,
   layer = 'google-satellite',
   onLayerChange,
+  clickAction = 'set-start',
+  onClickActionChange,
+  labels,
 }) => {
   const [internalLayer, setInternalLayer] = React.useState<MapLayer>(layer);
   const activeLayer = layer !== undefined && onLayerChange ? layer : internalLayer;
@@ -73,6 +100,14 @@ export const LoopMap: React.FC<LoopMapProps> = ({
   const handleSelectLayer = (newLayer: MapLayer) => {
     setInternalLayer(newLayer);
     if (onLayerChange) onLayerChange(newLayer);
+  };
+
+  const [internalClickAction, setInternalClickAction] = React.useState<MapClickAction>(clickAction);
+  const activeClickAction = clickAction !== undefined && onClickActionChange ? clickAction : internalClickAction;
+
+  const handleSelectClickAction = (action: MapClickAction) => {
+    setInternalClickAction(action);
+    if (onClickActionChange) onClickActionChange(action);
   };
 
   // Convert GeoJSON [lon, lat] pairs to Leaflet [lat, lon] pairs
@@ -144,6 +179,37 @@ export const LoopMap: React.FC<LoopMapProps> = ({
           🌍 OSM
         </button>
       </div>
+
+      {/* Map Action Mode Pills (Move Start Pin vs Mark Hotspot) */}
+      <div className="absolute top-12 left-14 z-[1000] flex bg-white/95 backdrop-blur-sm p-1 rounded-xl shadow-md border border-slate-200 text-xs font-bold gap-1">
+        <button
+          type="button"
+          onClick={() => handleSelectClickAction('set-start')}
+          className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+            activeClickAction === 'set-start'
+              ? 'bg-blue-600 text-white shadow-xs'
+              : 'text-slate-700 hover:bg-slate-100'
+          }`}
+          title="Clicking on map moves your walk start position"
+        >
+          <span>📍</span>
+          <span>{labels?.setStartPoint || 'Click Map to Move Start'}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSelectClickAction('add-hotspot')}
+          className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+            activeClickAction === 'add-hotspot'
+              ? 'bg-rose-600 text-white shadow-xs'
+              : 'text-slate-700 hover:bg-slate-100'
+          }`}
+          title="Clicking on map marks a smoke/traffic pollution spot"
+        >
+          <span>⚠️</span>
+          <span>{labels?.markHotspot || 'Mark Hotspot'}</span>
+        </button>
+      </div>
+
       <MapContainer
         center={center}
         zoom={16}
@@ -157,7 +223,11 @@ export const LoopMap: React.FC<LoopMapProps> = ({
         />
 
         <MapViewController center={center} cleanCoords={cleanLatLngs} />
-        <MapClickHandler onAddHotspot={onAddHotspot} />
+        <MapClickHandler
+          clickAction={activeClickAction}
+          onAddHotspot={onAddHotspot}
+          onSetStartCoords={onSetStartCoords}
+        />
 
         {/* Typical street baseline loop (grey dashed) */}
         {typicalLatLngs.length > 0 && (

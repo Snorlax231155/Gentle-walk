@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Sensitivity } from '../types';
 import { Language } from '../i18n/translations';
 import { Globe, AlertTriangle, Sparkles, Crosshair, Key, ChevronDown, Clock } from 'lucide-react';
+import { PlaceSearch } from './PlaceSearch';
 
 interface ControlsSidebarProps {
   language: Language;
@@ -11,6 +12,8 @@ interface ControlsSidebarProps {
   lat: number;
   lon: number;
   onCoordsChange: (lat: number, lon: number) => void;
+  placeName?: string;
+  onSelectPlaceName?: (name: string) => void;
   radiusM: number;
   onRadiusChange: (r: number) => void;
   minutes: number;
@@ -47,6 +50,7 @@ export const ControlsSidebar: React.FC<ControlsSidebarProps> = ({
   lat,
   lon,
   onCoordsChange,
+  onSelectPlaceName,
   radiusM,
   onRadiusChange,
   minutes,
@@ -130,10 +134,23 @@ export const ControlsSidebar: React.FC<ControlsSidebarProps> = ({
         </button>
       </div>
 
-      {/* 2. Primary Location Selector (Park / Colony) */}
+      {/* 2. Search Any Destination or Park to Visit */}
+      <PlaceSearch
+        onSelectPlace={(name, pLat, pLon) => {
+          onCoordsChange(pLat, pLon);
+          onDemoChange(false);
+          if (onSelectPlaceName) onSelectPlaceName(name);
+        }}
+        label={labels.searchDestination || 'Search Destination or Park'}
+        placeholder={labels.searchPlaceholder || 'Type park, colony, or city (e.g. Deer Park, Lalbagh)...'}
+        searchingLabel={labels.searching || 'Searching locations...'}
+        noPlacesLabel={labels.noPlacesFound || 'No locations found. Try another keyword.'}
+      />
+
+      {/* Quick Presets Dropdown */}
       <div>
-        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
-          {labels.presetLocations}
+        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+          {labels.presetLocations || 'Or Select Popular Park'}
         </label>
         <select
           value={
@@ -147,10 +164,15 @@ export const ControlsSidebar: React.FC<ControlsSidebarProps> = ({
             if (preset) {
               onCoordsChange(preset.lat, preset.lon);
               onDemoChange(preset.demo);
+              if (onSelectPlaceName) {
+                // Strip emoji from name
+                onSelectPlaceName(preset.name.replace(/^[^\w\s]*\s*/, ''));
+              }
             }
           }}
-          className="w-full text-sm font-semibold p-3 rounded-xl border-2 border-slate-300 bg-slate-50/80 text-slate-900 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200 transition-all cursor-pointer"
+          className="w-full text-xs font-semibold p-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-800 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200 transition-all cursor-pointer"
         >
+          <option value="" disabled>-- Or choose a popular park --</option>
           {PRESETS.map((p, idx) => (
             <option key={idx} value={idx}>
               {p.name} {p.demo ? '(Demo Grid)' : '(Live Park)'}

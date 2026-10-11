@@ -41,6 +41,14 @@ export const translations = {
     satelliteView: "Satellite View",
     streetView: "Street View",
     gentleSlopeNotice: "Excludes paths with >5% incline for elder safety",
+    searchDestination: "Search Any Destination or Park",
+    searchPlaceholder: "Type park, colony, or city (e.g. Deer Park, Lalbagh)...",
+    searching: "Searching locations...",
+    noPlacesFound: "No locations found. Try another keyword.",
+    setStartPoint: "Move Start Point",
+    markHotspot: "Report Hotspot",
+    clickMapHint: "Click anywhere on the map to set your walking start point",
+    customDestination: "Visited Place",
   },
   hi: {
     appTitle: "जेंटल वॉक (Gentle Walk)",
@@ -82,5 +90,13 @@ export const translations = {
     satelliteView: "सैटेलाइट दृश्य",
     streetView: "सड़क दृश्य",
     gentleSlopeNotice: "बुजुर्गों के आराम के लिए 5% से अधिक ढलान वाले मार्ग हटाए गए हैं",
+    searchDestination: "कोई भी गंतव्य या पार्क खोजें",
+    searchPlaceholder: "पार्क, कॉलोनी या शहर लिखें (उदा. डियर पार्क, लालबाग)...",
+    searching: "स्थान खोज रहे हैं...",
+    noPlacesFound: "कोई स्थान नहीं मिला। दूसरा नाम लिखें।",
+    setStartPoint: "शुरुआती बिंदु बदलें",
+    markHotspot: "धुआं स्थल चिन्हित करें",
+    clickMapHint: "शुरुआती बिंदु सेट करने के लिए नक्शे पर कहीं भी क्लिक करें",
+    customDestination: "भ्रमण स्थल",
   }
 };

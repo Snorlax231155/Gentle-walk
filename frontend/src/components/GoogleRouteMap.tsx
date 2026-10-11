@@ -9,8 +9,10 @@ interface GoogleRouteMapProps {
   typicalLoop?: LoopResult;
   hotspots: Hotspot[];
   onAddHotspot: (lat: number, lon: number) => void;
+  onSetStartCoords?: (lat: number, lon: number) => void;
   cleanLoopLabel: string;
   typicalLoopLabel: string;
+  clickAction?: 'set-start' | 'add-hotspot';
 }
 
 // Polyline component using Google Maps JS API within @vis.gl/react-google-maps
@@ -99,8 +101,10 @@ export const GoogleRouteMap: React.FC<GoogleRouteMapProps> = ({
   typicalLoop,
   hotspots,
   onAddHotspot,
+  onSetStartCoords,
   cleanLoopLabel,
   typicalLoopLabel,
+  clickAction = 'set-start',
 }) => {
   // Convert GeoJSON [lon, lat] pairs to Google Maps LatLngLiteral { lat, lng }
   const cleanPath: google.maps.LatLngLiteral[] = cleanLoop
@@ -143,7 +147,14 @@ export const GoogleRouteMap: React.FC<GoogleRouteMapProps> = ({
           internalUsageAttributionIds={['gmp_git_agentskills_v1']}
           onClick={(e) => {
             if (e.detail.latLng) {
-              onAddHotspot(e.detail.latLng.lat, e.detail.latLng.lng);
+              if (clickAction === 'set-start' && onSetStartCoords) {
+                onSetStartCoords(
+                  Math.round(e.detail.latLng.lat * 10000) / 10000,
+                  Math.round(e.detail.latLng.lng * 10000) / 10000
+                );
+              } else {
+                onAddHotspot(e.detail.latLng.lat, e.detail.latLng.lng);
+              }
             }
           }}
         >
