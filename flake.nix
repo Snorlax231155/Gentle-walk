@@ -17,6 +17,7 @@
             jdk21
             maven
             nodejs
+            awscli2
           ];
 
           shellHook = ''
